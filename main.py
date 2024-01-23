@@ -15,5 +15,5 @@ CONFIG = {
 
 dm = DataManager(CONFIG)
 dm.load()
-# print(dm.data["moral_werte"].iloc[8])
+print(dm.data["moral_werte"].iloc[8])
 

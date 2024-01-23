@@ -1,4 +1,5 @@
 import pandas as pd
+from pandas import DataFrame
 
 
 class DataManager:
@@ -8,7 +9,7 @@ class DataManager:
         self.data = None
         self.save_path = "output/" + self.config["file_path"].split(".")[0] + "_processed.csv"
 
-    def load(self) -> None:
+    def load(self) -> DataFrame:
         """
         Method to load, validate and process data.
         :return: None
@@ -17,18 +18,20 @@ class DataManager:
             print("processesing data...")
             data = self._reformat()
             data = self._clean_data(data)
+            self.data = data
+            return data
 
         else:
             print("Data already processed, continuing.")
 
-    def save(self):
+    def save(self) -> None:
         """
         save the processed data
         :return:
         """
         self.data.to_csv(self.save_path, index=False)
 
-    def _reformat(self) -> pd.DataFrame:
+    def _reformat(self) -> DataFrame:
         """
         helper that drops specified cols and merges the specified ones.
         :return: pd.DataFrame clean of unnecessary cols
@@ -39,20 +42,29 @@ class DataManager:
         data['moral_werte'] = data.apply(self._merge_columns, axis=1)
         return data
 
-    def _clean_data(self, data: pd.DataFrame):
+    @staticmethod
+    def _clean_data(data: DataFrame) -> DataFrame:
+        """
+        method to clean data from unnecessary whitespaces, hashes
+        :param data: DataFrame
+        :return: DataFrame
+        """
         # iterate over rows
         for c_idx, content in data['moral_werte'].items():
-            print(f"row: {c_idx}")
             # iterate over list of strings of row
             for s_idx, string in enumerate(content):
                 # remove whitespaces at begin and end of str
                 string = string.strip()
-                string = string.replace("#","")
                 # remove hashs
-                print(string)
-        return "HAHA"
+                string = string.replace("#", "")
+                # update string in list
+                content[s_idx] = string
+            # update list in Series
+            data["moral_werte"].iloc[c_idx] = content
+        return data
+
     @staticmethod
-    def _merge_columns(row):
+    def _merge_columns(row: pd.Series):
         """
         merges columns
         :param row: pd.Series
@@ -68,7 +80,7 @@ class DataManager:
     def _read_data(self) -> pd.DataFrame:
         """
         Method to read in xlsx files as DataFrame.
-        :return: pd.DataFrame of exel file as is
+        :return: DataFrame of exel file as is
         """
         try:
             raw_data = pd.read_excel(self.config["file_path"])
