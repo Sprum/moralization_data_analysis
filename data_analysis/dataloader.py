@@ -2,7 +2,7 @@ import pandas as pd
 from pandas import DataFrame
 
 
-class DataManager:
+class DataLoader:
     def __init__(self, conf: dict) -> None:
         self.config = conf
         self.raw_data = self._read_data()
@@ -57,6 +57,8 @@ class DataManager:
                 string = string.strip()
                 # remove hashs
                 string = string.replace("#", "")
+                # remove Gänsefüßchen
+                string = string.replace('"', '')
                 # update string in list
                 content[s_idx] = string
             # update list in Series
