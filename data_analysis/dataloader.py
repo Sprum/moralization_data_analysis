@@ -2,7 +2,10 @@ import pandas as pd
 from pandas import DataFrame
 
 
-class DataManager:
+class DataLoader:
+    """
+    Class to load data and preprocess, eg. remove whitespace and quotationmarks. Init with a Config dictionary.
+    """
     def __init__(self, conf: dict) -> None:
         self.config = conf
         self.raw_data = self._read_data()
@@ -57,8 +60,11 @@ class DataManager:
                 string = string.strip()
                 # remove hashs
                 string = string.replace("#", "")
+                # remove quotation marks
+                # TODO: fix cleaning quotation marks
+                clean_string = string.replace('"', '')
                 # update string in list
-                content[s_idx] = string
+                content[s_idx] = clean_string
             # update list in Series
             data["moral_werte"].iloc[c_idx] = content
         return data
