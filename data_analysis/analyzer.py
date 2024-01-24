@@ -13,15 +13,22 @@ class Analyzer:
 
     # TODO: add workflow to read in whole dir
     def occurrences_to_csv(self, mode: str = "file", **kwargs) -> pd.DataFrame:
+        """
+        get, transform and turn data in to csv. either a single file or a whole directory.
+        :param mode: str: str | bool  -> specify if you want to create a csv from dir or file
+        :param kwargs: set phrase to index of df with index_col="phrase"
+        :return: DataFrame (or Error :))
+        """
         if mode == "file":
             data_dict = self._map_data('phrase_to_moral')
             counted_vals = self._count_moral_vals(data_dict)
             df = self._make_csv(counted_vals, **kwargs)
+            return df
+
         elif mode == "dir":
             print("to be implemented")
         else:
             raise ValueError(f"Unknown mode: {mode}\ntry 'file' or 'dir' instead")
-        return df
 
     def _count_moral_vals(self, data_dict: dict) -> list[dict[str:str | str:int]]:
         """
