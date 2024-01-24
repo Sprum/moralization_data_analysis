@@ -1,4 +1,6 @@
-from data_analysis.analyzer import Analyzer
+import pandas as pd
+
+from analyzer import Analyzer
 from data_analysis.dataloader import DataLoader
 # supress pandas warnings
 import warnings
@@ -15,6 +17,7 @@ CONFIG = {
 }
 
 data_loader = DataLoader(CONFIG)
+
 analyzer = Analyzer(data_loader)
 
 analyzer.occurrences_to_csv(index_col="phrase")
