@@ -8,6 +8,9 @@ MFT_SET = {"Care", "Harm", "Fairness", "Cheating", "Loyalty", "Betrayal", "Autho
 
 
 class Analyzer:
+    """
+    Class to analyze labeled data. Init with DatLoader.
+    """
     def __init__(self, dataloader: DataLoader):
         self.data = dataloader.load()
 

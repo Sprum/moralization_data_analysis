@@ -3,6 +3,9 @@ from pandas import DataFrame
 
 
 class DataLoader:
+    """
+    Class to load data and preprocess, eg. remove whitespace and quotationmarks. Init with a Config dictionary.
+    """
     def __init__(self, conf: dict) -> None:
         self.config = conf
         self.raw_data = self._read_data()
