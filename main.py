@@ -1,7 +1,5 @@
 import pandas as pd
-
-from analyzer import Analyzer
-from data_analysis.dataloader import DataLoader
+from data_analysis import Analyzer, DataLoader
 # supress pandas warnings
 import warnings
 warnings.filterwarnings("ignore")
