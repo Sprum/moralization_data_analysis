@@ -12,10 +12,13 @@ CONFIG = {
                   "Label Explizite Forderungen", "Spans Explizite Forderung", "Label Implizite Forderungen",
                   "Spans Implizite Forderung"],
     "merge_cols": ["Spans Obj. Moralwerte", "Spans Subj. Moralwerte"],
+    "mode": "dir",
 }
 
-data_loader = DataLoader(CONFIG)
+if __name__ == '__main__':
 
-analyzer = Analyzer(data_loader)
+    data_loader = DataLoader(CONFIG)
+    analyzer = Analyzer(data_loader, CONFIG)
 
-analyzer.occurrences_to_csv(index_col="phrase")
+    df = analyzer.occurrences_to_csv(index_col="phrase")
+    print(df)

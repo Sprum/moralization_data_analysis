@@ -60,10 +60,11 @@ class DataLoader:
                 string = string.strip()
                 # remove hashs
                 string = string.replace("#", "")
-                # remove Gänsefüßchen
-                string = string.replace('"', '')
+                # remove quotation marks
+                # TODO: fix cleaning quotation marks
+                clean_string = string.replace('"', '')
                 # update string in list
-                content[s_idx] = string
+                content[s_idx] = clean_string
             # update list in Series
             data["moral_werte"].iloc[c_idx] = content
         return data

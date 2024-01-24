@@ -9,10 +9,11 @@ MFT_SET = {"Care", "Harm", "Fairness", "Cheating", "Loyalty", "Betrayal", "Autho
 
 class Analyzer:
     """
-    Class to analyze labeled data. Init with DatLoader.
+    Class to analyze labeled data. Init with DatLoader and config dictionary.
     """
-    def __init__(self, dataloader: DataLoader):
+    def __init__(self, dataloader: DataLoader, config):
         self.data = dataloader.load()
+        self.config = config
 
     # TODO: add workflow to read in whole dir
     def occurrences_to_csv(self, mode: str = "file", **kwargs) -> pd.DataFrame:
