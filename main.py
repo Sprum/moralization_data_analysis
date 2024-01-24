@@ -23,8 +23,10 @@ if __name__ == '__main__':
     files = [file for file in path.iterdir() if file.is_file()]
     for file in files:
         CONFIG["file_path"] = str(file)
-        data_loader = DataLoader(CONFIG)
-        analyzer = Analyzer(data_loader, CONFIG)
+        try:
+            data_loader = DataLoader(CONFIG)
+            analyzer = Analyzer(data_loader, CONFIG)
 
-        df = analyzer.occurrences_to_csv(index_col="phrase")
-
+            df = analyzer.occurrences_to_csv(index_col="phrase")
+        except TypeError as e:
+            print(f"{e} | in file: {str(file)}")
