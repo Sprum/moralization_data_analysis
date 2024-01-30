@@ -8,7 +8,7 @@ warnings.filterwarnings("ignore")
 
 # init Configuration
 CONFIG = {
-    "file_path": "data/DE-Gerichtsurteile-NEG.xlsx",
+    "file_path": "data\EN-Leserkommentare-POS-Linzner.xlsx",
     "drop_cols": ["Typ", "Label Obj. Moralwerte", "Label Subj. Moralwerte", "Label Kommunikative Funktionen",
                   "Spans Kommunikative Funktionen", "Label Protagonist:innen", "Spans Protagonist:innen",
                   "Label Explizite Forderungen", "Spans Explizite Forderung", "Label Implizite Forderungen",
@@ -18,16 +18,8 @@ CONFIG = {
 }
 
 if __name__ == '__main__':
-    path = Path("data")
-    files = [file for file in path.iterdir() if file.is_file()]
-    for file in files:
-        CONFIG["file_path"] = str(file)
-        print(f"processing: {CONFIG['file_path']}")
-        try:
-            data_loader = DataLoader(CONFIG)
-            analyzer = Analyzer(data_loader, CONFIG)
 
-            df = analyzer.occurrences_to_csv(index_col="phrase")
-
-        except TypeError as e:
-            print(f"{e} | in file: {str(file)}")
+    data_loader = DataLoader(CONFIG)
+    analyzer = Analyzer(data_loader, CONFIG)
+    df = analyzer.occurrences_to_csv(index_col="phrase")
+    df.to_csv("data/output/testings.csv")

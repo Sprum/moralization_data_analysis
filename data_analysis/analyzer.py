@@ -101,7 +101,10 @@ class Analyzer:
         # iter over list in Series
         for s_list in data:
             # iter over string in list
-            for string in s_list:
+            for idx, string in enumerate(s_list):
+                # check if string was split on unsafe semicolon:
+                if not any([string.startswith(moral_val) for moral_val in MFT_SET]):
+                    print(s_list[idx-1], string)
                 # slice string for key and val (based on mode)
                 sliced_str = string.split(":", maxsplit=1)
                 key = sliced_str[key_index].strip()
