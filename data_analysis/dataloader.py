@@ -75,8 +75,9 @@ class DataLoader:
                     # remove hashs
                     string = string.replace("#", "")
                     # remove quotation marks
-                    # TODO: fix cleaning quotation marks
                     clean_string = string.replace('"', '')
+                    clean_string = clean_string.replace(u'\u201e', '')
+                    clean_string = clean_string.replace(u'\u201c', '')
                     # update string in list
                     content[s_idx] = clean_string
                 # update list in Series
