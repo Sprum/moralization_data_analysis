@@ -11,6 +11,7 @@ class Analyzer:
     """
     Class to analyze labeled data. Init with DatLoader and config dictionary.
     """
+
     def __init__(self, dataloader: DataLoader, config):
         self.data = dataloader.load()
         self.config = config
@@ -54,7 +55,8 @@ class Analyzer:
             list_of_phrases.append(moral_val_counter)
         return list_of_phrases
 
-    def _make_csv(self, counted_vals: list, save: bool = True, index_col: str | bool = False) -> pd.DataFrame:
+    def _make_csv(self, counted_vals: list, save: bool = True, out_path: str = "data/output/test.csv",
+                  index_col: str | bool = False) -> pd.DataFrame:
         """
         Helper method that takes a dict mapping phrases to labeled moral values and creates a Dataframe with the phrases
          and the respective number they were labeled.
@@ -74,10 +76,10 @@ class Analyzer:
             index = True
             df.set_index(index_col, inplace=True)
         else:
-            index=False
+            index = False
         # save if save true
         if save:
-            df.to_csv("data/output/test.csv", index=index)
+            df.to_csv(out_path, index=index)
         return df
 
     def _map_data(self, mode: str) -> dict[str: list]:
@@ -104,7 +106,7 @@ class Analyzer:
             for idx, string in enumerate(s_list):
                 # check if string was split on unsafe semicolon:
                 if not any([string.startswith(moral_val) for moral_val in MFT_SET]):
-                    print(s_list[idx-1], string)
+                    print(s_list[idx - 1], string)
                 # slice string for key and val (based on mode)
                 sliced_str = string.split(":", maxsplit=1)
                 key = sliced_str[key_index].strip()
@@ -115,3 +117,6 @@ class Analyzer:
                 else:
                     data_dict[key] = [val]
         return data_dict
+
+    def _clean_strings(self):
+        pass
