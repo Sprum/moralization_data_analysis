@@ -149,4 +149,4 @@ class Analyzer:
             lemmatized_string = ' '.join([token.lemma_ for token in doc if not token.is_stop])
             return lemmatized_string
         else:
-            raise ValueError("No NLP Model loaded; supported languages: DE")
+            raise ValueError("No NLP Model loaded; supported languages: EN, DE, FR, IT")
