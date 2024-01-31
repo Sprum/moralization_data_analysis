@@ -9,6 +9,7 @@ pandas = "*"
 matplotlib = "*"
 jupyterlab = "*"
 openpyxl = "*"
+spacy = "*"
 
 [dev-packages]
 

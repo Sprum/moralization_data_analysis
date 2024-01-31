@@ -23,7 +23,6 @@ if __name__ == '__main__':
     for file in files:
         # solange nur file mode da ist ....
         CONFIG["file_path"] = str(file)
-        print(f"processing: {CONFIG['file_path']}")
         try:
             data_loader = DataLoader(CONFIG)
             analyzer = Analyzer(data_loader, CONFIG)
@@ -32,7 +31,7 @@ if __name__ == '__main__':
             # construct out path
             in_path = Path(CONFIG["file_path"])
             save_path = in_path.parent / "output" / in_path.name
-            save_path = save_path.with_name(save_path.stem + "_processed.csv")
+            save_path = save_path.with_name(save_path.stem + "_lemmatized.csv")
             df.to_csv(save_path, encoding="utf-8-sig")
         except TypeError as e:
             print(f"{e} | in file: {str(file)}")

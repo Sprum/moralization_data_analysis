@@ -1,4 +1,7 @@
+from pathlib import Path
+
 import pandas as pd
+import spacy
 
 from data_analysis.dataloader import DataLoader
 
@@ -15,6 +18,7 @@ class Analyzer:
     def __init__(self, dataloader: DataLoader, config):
         self.data = dataloader.load()
         self.config = config
+        self.nlp = self._nlp_factory()
 
     # TODO: add workflow to read in whole dir
     def occurrences_to_csv(self, mode: str = "file", **kwargs) -> pd.DataFrame:
@@ -55,7 +59,7 @@ class Analyzer:
             list_of_phrases.append(moral_val_counter)
         return list_of_phrases
 
-    def _make_csv(self, counted_vals: list, save: bool = True, out_path: str = "data/output/test.csv",
+    def _make_csv(self, counted_vals: list, save: bool = False, out_path: str = "data/output/test.csv",
                   index_col: str | bool = False) -> pd.DataFrame:
         """
         Helper method that takes a dict mapping phrases to labeled moral values and creates a Dataframe with the phrases
@@ -110,6 +114,9 @@ class Analyzer:
                 # slice string for key and val (based on mode)
                 sliced_str = string.split(":", maxsplit=1)
                 key = sliced_str[key_index].strip()
+                # lemmatize with stopword:
+                if mode == "phrase_to_moral":
+                    key = self._lemmatize(key)
                 val = sliced_str[val_index].strip()
                 # append data
                 if key in data_dict:
@@ -118,5 +125,28 @@ class Analyzer:
                     data_dict[key] = [val]
         return data_dict
 
-    def _clean_strings(self):
-        pass
+    def _nlp_factory(self):
+        in_path = Path(self.config['file_path']).name
+        if in_path.startswith("DE"):
+            nlp = spacy.load('de_core_news_lg')
+            return nlp
+        elif in_path.startswith("EN"):
+            nlp = spacy.load('en_core_web_lg')
+            return nlp
+        elif in_path.startswith("FR"):
+            nlp = spacy.load('fr_core_news_lg')
+            return nlp
+        elif in_path.startswith("IT"):
+            nlp = spacy.load('it_core_news_lg')
+            return nlp
+        else:
+            print("unsupported language. Languages supported are: EN, DE, FR, IT")
+            return None
+
+    def _lemmatize(self, string: str):
+        if self.nlp:
+            doc = self.nlp(string)
+            lemmatized_string = ' '.join([token.lemma_ for token in doc if not token.is_stop])
+            return lemmatized_string
+        else:
+            raise ValueError("No NLP Model loaded; supported languages: EN, DE, FR, IT")
