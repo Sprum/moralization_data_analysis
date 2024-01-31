@@ -146,7 +146,7 @@ class Analyzer:
     def _lemmatize(self, string: str):
         if self.nlp:
             doc = self.nlp(string)
-            lemmatized_string = ' '.join([token.lemma_ for token in doc if not token.is_stop])
+            lemmatized_string = ' '.join([token.lemma_ for token in doc])
             return lemmatized_string
         else:
             raise ValueError("No NLP Model loaded; supported languages: EN, DE, FR, IT")
