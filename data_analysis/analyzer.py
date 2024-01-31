@@ -130,8 +130,17 @@ class Analyzer:
         if in_path.startswith("DE"):
             nlp = spacy.load('de_core_news_lg')
             return nlp
+        elif in_path.startswith("EN"):
+            nlp = spacy.load('en_core_web_lg')
+            return nlp
+        elif in_path.startswith("FR"):
+            nlp = spacy.load('fr_core_news_lg')
+            return nlp
+        elif in_path.startswith("IT"):
+            nlp = spacy.load('it_core_news_lg')
+            return nlp
         else:
-            print("unsupported language")
+            print("unsupported language. Languages supported are: EN, DE, FR, IT")
             return None
 
     def _lemmatize(self, string: str):
