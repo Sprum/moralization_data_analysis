@@ -15,10 +15,11 @@ class Analyzer:
     Class to analyze labeled data. Init with DatLoader and config dictionary.
     """
 
-    def __init__(self, dataloader: DataLoader, config):
+    def __init__(self, dataloader: DataLoader, config: dict, skip_nlp: bool = False):
         self.data = dataloader.load()
         self.config = config
-        self.nlp = self._nlp_factory()
+        if not skip_nlp:
+            self.nlp = self._nlp_factory()
 
     # TODO: add workflow to read in whole dir
     def occurrences_to_csv(self, mode: str = "file", **kwargs) -> pd.DataFrame:

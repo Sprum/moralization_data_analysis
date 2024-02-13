@@ -8,7 +8,7 @@ MFT_SET = {"Care", "Harm", "Fairness", "Cheating", "Loyalty", "Betrayal", "Autho
 
 class DataLoader:
     """
-    Class to load data and preprocess, eg. remove whitespace and quotationmarks. Init with a Config dictionary.
+    Class to load data and preprocess, eg. remove whitespace and quotation marks. Init with a Config dictionary.
     """
 
     def __init__(self, conf: dict) -> None:
@@ -32,6 +32,8 @@ class DataLoader:
 
         else:
             print("Data already processed, continuing.")
+            data = pd.read_csv(self.config['file_path'])
+            return data
 
     def save(self) -> None:
         """
@@ -72,7 +74,7 @@ class DataLoader:
                 for s_idx, string in enumerate(content):
                     # remove whitespaces at begin and end of str
                     string = string.strip()
-                    # remove hashs
+                    # remove hashes
                     string = string.replace("#", "")
                     # remove quotation marks
                     clean_string = string.replace('"', '')
@@ -142,7 +144,7 @@ class DataLoader:
     @staticmethod
     def _check_semicolon(text: str) -> bool:
         """
-        helper method to check whether or not a semicolon is present that should not be sliced at
+        helper method to check whether a semicolon is present that should not be sliced at
         :return: bool
         """
 
