@@ -15,9 +15,9 @@ class DataLoader:
 
     def __init__(self, conf: dict) -> None:
         self.config = conf
+        self.data_path = Path(self.config["file_path"])
         self.raw_data = self._read_data()
         self.data = None
-        self.data_path = Path(self.config["file_path"])
         self.save_path = "output/" + self.config["file_path"].split(".")[0] + "_processed.csv"
 
     def load(self) -> DataFrame | list[DataFrame]:
@@ -32,7 +32,7 @@ class DataLoader:
             for file in path.iterdir():
                 data_temp = pd.read_csv(file)
                 data.append(data_temp)
-                return data
+            return data
         else:
             print(f"loading data from file: {path}")
             if not self._is_processed():
@@ -179,12 +179,26 @@ class DataLoader:
         Method to read in xlsx files as DataFrame.
         :return: DataFrame of exel file as is
         """
-        try:
-            raw_data = pd.read_excel(self.data_path)
-        except FileNotFoundError:
-            self.data_path = input(f"File {self.config['file_path']} not present, please enter a valid path:")
-            raw_data = self._read_data()
-        return raw_data
+        if not self.data_path.is_dir():
+            try:
+                if self.data_path.suffix != ".xlsx":
+                    raw_data = pd.read_csv(self.data_path)
+                    return raw_data
+                else:
+                    raw_data = pd.read_excel(self.data_path)
+            except FileNotFoundError:
+                self.data_path = input(f"File {self.config['file_path']} not present, please enter a valid path:")
+                raw_data = self._read_data()
+            return raw_data
+        else:
+            try:
+                sample_file = next(self.data_path.iterdir())
+                raw_data = pd.read_csv(sample_file)
+                return raw_data
+            except FileNotFoundError:
+                self.data_path = input(f"File {self.config['file_path']} not present, please enter a valid path:")
+                raw_data = self._read_data()
+                return raw_data
 
     def _is_processed(self) -> bool:
         """

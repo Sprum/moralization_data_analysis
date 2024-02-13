@@ -154,12 +154,14 @@ class Analyzer:
             raise ValueError("No NLP Model loaded; supported languages: EN, DE, FR, IT")
 
 
-    def _preprocess_piechart(self, data_list: pd.DataFrame) -> pd.DataFrame:
+    def _preprocess_piechart(self, data_que: list[pd.DataFrame], by: str = "language") -> pd.DataFrame:
         """
         Helper method to preprocess data for pie chart
         :param data: pd.DataFrame
         :return: pd.DataFrame
         """
+        # merge all dataframes from data_que into one
+
         data = None
         return data
     def make_piechart(self, data: pd.DataFrame) -> None:
