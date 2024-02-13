@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pandas as pd
 from pandas import DataFrame
 
@@ -15,25 +17,36 @@ class DataLoader:
         self.config = conf
         self.raw_data = self._read_data()
         self.data = None
+        self.data_path = Path(self.config["file_path"])
         self.save_path = "output/" + self.config["file_path"].split(".")[0] + "_processed.csv"
 
-    def load(self) -> DataFrame:
+    def load(self) -> DataFrame | list[DataFrame]:
         """
-        Method to load, validate and process data.
-        :return: None
+        Method to load, validate and process data. Can load dirs and files.
+        :return: DataFrame | list[DataFrame]
         """
-        if not self._is_processed():
-            print(f"processesing data: {self.config['file_path']}")
-            data = self._reformat()
-            data = self._clean_data(data)
-            data['moral_werte'] = data.apply(self._validate_split, axis=1)
-            self.data = data
-            return data
-
+        path = self.data_path
+        if path.is_dir():
+            print(f"loading data from dir: {path}")
+            data = []
+            for file in path.iterdir():
+                data_temp = pd.read_csv(file)
+                data.append(data_temp)
+                return data
         else:
-            print("Data already processed, continuing.")
-            data = pd.read_csv(self.config['file_path'])
-            return data
+            print(f"loading data from file: {path}")
+            if not self._is_processed():
+                print(f"processesing data: {path}")
+                data = self._reformat()
+                data = self._clean_data(data)
+                data['moral_werte'] = data.apply(self._validate_split, axis=1)
+                self.data = data
+                return data
+
+            else:
+                print("Data already processed, continuing.")
+                data = pd.read_csv(path)
+                return data
 
     def save(self) -> None:
         """
@@ -167,9 +180,9 @@ class DataLoader:
         :return: DataFrame of exel file as is
         """
         try:
-            raw_data = pd.read_excel(self.config["file_path"])
+            raw_data = pd.read_excel(self.data_path)
         except FileNotFoundError:
-            self.config["file_path"] = input(f"File {self.config['file_path']} not present, please enter a valid path:")
+            self.data_path = input(f"File {self.config['file_path']} not present, please enter a valid path:")
             raw_data = self._read_data()
         return raw_data
 

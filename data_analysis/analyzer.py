@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pandas as pd
 import spacy
+from matplotlib import pyplot as plt
 
 from data_analysis.dataloader import DataLoader
 
@@ -151,3 +152,22 @@ class Analyzer:
             return lemmatized_string
         else:
             raise ValueError("No NLP Model loaded; supported languages: EN, DE, FR, IT")
+
+
+    def _preprocess_piechart(self, data_list: pd.DataFrame) -> pd.DataFrame:
+        """
+        Helper method to preprocess data for pie chart
+        :param data: pd.DataFrame
+        :return: pd.DataFrame
+        """
+        data = None
+        return data
+    def make_piechart(self, data: pd.DataFrame) -> None:
+        """
+        Helper method to create pie chart of moral values by language
+        :param data: pd.DataFrame
+        :return: None
+        """
+        # initialize figure
+        fig = plt.figure(figsize=(10, 10))
+

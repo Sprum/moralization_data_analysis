@@ -9,6 +9,7 @@ warnings.filterwarnings("ignore")
 # init Configuration
 CONFIG = {
     "file_path": "data/DE-Gerichtsurteile-NEG.xlsx",
+    "plot_path": "output/plot.png",
     "drop_cols": ["Typ", "Label Obj. Moralwerte", "Label Subj. Moralwerte", "Label Kommunikative Funktionen",
                   "Spans Kommunikative Funktionen", "Label Protagonist:innen", "Spans Protagonist:innen",
                   "Label Explizite Forderungen", "Spans Explizite Forderung", "Label Implizite Forderungen",
