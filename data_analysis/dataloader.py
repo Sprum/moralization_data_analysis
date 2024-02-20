@@ -83,6 +83,7 @@ class DataLoader:
                 non_rows.append(c_idx)
                 continue
             else:
+                # TODO: aufräumen. ugly.
                 # iterate over list of strings of row
                 for s_idx, string in enumerate(content):
                     # remove whitespaces at begin and end of str
@@ -187,7 +188,7 @@ class DataLoader:
                 else:
                     raw_data = pd.read_excel(self.data_path)
             except FileNotFoundError:
-                self.data_path = input(f"File {self.config['file_path']} not present, please enter a valid path:")
+                self.data_path = Path(input(f"File {self.config['file_path']} not present, please enter a valid path:"))
                 raw_data = self._read_data()
             return raw_data
         else:
@@ -196,7 +197,7 @@ class DataLoader:
                 raw_data = pd.read_csv(sample_file)
                 return raw_data
             except FileNotFoundError:
-                self.data_path = input(f"File {self.config['file_path']} not present, please enter a valid path:")
+                self.data_path = Path(input(f"File {self.config['file_path']} not present, please enter a valid path:"))
                 raw_data = self._read_data()
                 return raw_data
 

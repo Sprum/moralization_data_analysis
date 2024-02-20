@@ -1,9 +1,15 @@
 from pathlib import Path
+from typing import Type
 
+import numpy as np
 import pandas as pd
 import spacy
-from matplotlib import pyplot as plt
+import matplotlib as mpl
 
+from matplotlib import pyplot as plt
+from pandas import Series, DataFrame
+
+from data_analysis.data_filter import DataFilter, MoralDistributionFilter
 from data_analysis.dataloader import DataLoader
 
 MFT_SET = {"Care", "Harm", "Fairness", "Cheating", "Loyalty", "Betrayal", "Authority", "Subversion", "Purity",
@@ -23,7 +29,7 @@ class Analyzer:
             self.nlp = self._nlp_factory()
 
     # TODO: add workflow to read in whole dir
-    def occurrences_to_csv(self, mode: str = "file", **kwargs) -> pd.DataFrame:
+    def occurrences_to_csv(self, mode: str = "file", **kwargs) -> DataFrame:
         """
         get, transform and turn data in to csv. either a single file or a whole directory.
         :param mode: str: str | bool  -> specify if you want to create a csv from dir or file
@@ -62,7 +68,7 @@ class Analyzer:
         return list_of_phrases
 
     def _make_csv(self, counted_vals: list, save: bool = False, out_path: str = "data/output/test.csv",
-                  index_col: str | bool = False) -> pd.DataFrame:
+                  index_col: str | bool = False) -> DataFrame:
         """
         Helper method that takes a dict mapping phrases to labeled moral values and creates a Dataframe with the phrases
          and the respective number they were labeled.
@@ -74,7 +80,7 @@ class Analyzer:
         # create and order Dataframe
         order = ['phrase', 'Degradation', 'Care', 'Harm', 'Subversion', 'Fairness', 'Authority', 'Purity', 'Cheating',
                  'OTHER', 'Loyalty', 'Oppression', 'Betrayal', 'Liberty']
-        df = pd.DataFrame(counted_vals)
+        df = DataFrame(counted_vals)
         df.fillna(0)
         df = df[order]
         # optional: set phrases to index
@@ -142,7 +148,7 @@ class Analyzer:
             nlp = spacy.load('it_core_news_lg')
             return nlp
         else:
-            print("unsupported language. Languages supported are: EN, DE, FR, IT")
+            print("unsupported language or file name. Supported language prefixes are: EN, DE, FR, IT")
             return None
 
     def _lemmatize(self, string: str):
@@ -153,23 +159,56 @@ class Analyzer:
         else:
             raise ValueError("No NLP Model loaded; supported languages: EN, DE, FR, IT")
 
-
-    def _preprocess_piechart(self, data_que: list[pd.DataFrame], by: str = "language") -> pd.DataFrame:
+    def _preprocess_piechart(self, data: DataFrame, Filter: Type[DataFilter]) -> Series:
         """
         Helper method to preprocess data for pie chart
-        :param data: pd.DataFrame
-        :return: pd.DataFrame
+        :param data: DataFrame
+        :return: DataFrame
         """
-        # merge all dataframes from data_que into one
+        # init filter
+        cf = Filter(data)
+        # filter data
+        processed_data = cf.filter()
+        return processed_data
 
-        data = None
-        return data
-    def make_piechart(self, data: pd.DataFrame) -> None:
+    def make_piechart(self, data: DataFrame, c_map: str = 'tab20b', save: bool = True) -> None:
         """
-        Helper method to create pie chart of moral values by language
-        :param data: pd.DataFrame
+        Method to create pie chart of moral values by language
+        :param data: DataFrame
         :return: None
         """
-        # initialize figure
-        fig = plt.figure(figsize=(10, 10))
+        # process data
+        processed_data = self._preprocess_piechart(data, MoralDistributionFilter)
+        self._piechart(processed_data, c_map, save=save)
 
+    def make_piecharts(self, data_que: list[DataFrame], c_map: str = 'tab20b', save: bool = True) -> None:
+        """
+        Method to create pie chart
+        :param data_que: list of Dataframes to be processed
+        :param data: list[DataFrame]
+        :return: None
+        """
+        processed_data = None
+        # process data
+        for data in data_que:
+            if processed_data is None:
+                processed_data = self._preprocess_piechart(data, MoralDistributionFilter)
+            else:
+                processed_data += self._preprocess_piechart(data, MoralDistributionFilter)
+
+        self._piechart(processed_data, c_map, save=save)
+
+    def _piechart(self, data: Series, c_map, save: bool = True):
+        # config colors
+        cmap = mpl.colormaps[c_map]
+        colors = cmap(np.linspace(0, 1, len(data)))
+        # init figure
+        plt.figure(figsize=(11, 11))
+        autopct_format = lambda p: f'{p:.1f}%\n{int(p * data.sum() / 100)}'
+        plt.pie(data, labels=None, autopct=autopct_format, startangle=140, colors=colors)
+        # Create a legend
+        plt.legend(data.index, loc="best")
+        if save:
+            plt.savefig(self.config['plot_path'])
+        else:
+            plt.show()
