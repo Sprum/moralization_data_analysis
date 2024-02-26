@@ -54,3 +54,6 @@ class FilterSequence:
             result = data_filter(result).filter()
 
         return result
+
+    def filter(self):
+        return self()

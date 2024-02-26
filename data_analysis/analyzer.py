@@ -11,6 +11,7 @@ from pandas import Series, DataFrame
 
 from data_analysis.data_filter import DataFilter, MoralDistributionFilter
 from data_analysis.dataloader import DataLoader
+from data_analysis.filter_sequence import FilterSequence
 
 MFT_SET = {"Care", "Harm", "Fairness", "Cheating", "Loyalty", "Betrayal", "Authority", "Subversion", "Purity",
            "Degradation", "Liberty",
@@ -159,14 +160,15 @@ class Analyzer:
         else:
             raise ValueError("No NLP Model loaded; supported languages: EN, DE, FR, IT")
 
-    def _preprocess_piechart(self, data: DataFrame, Filter: Type[DataFilter]) -> Series:
+    def _preprocess_piechart(self, data: DataFrame,
+                             data_filter: Type[DataFilter | FilterSequence]) -> Series | DataFrame:
         """
         Helper method to preprocess data for pie chart
         :param data: DataFrame
         :return: DataFrame
         """
         # init filter
-        cf = Filter(data)
+        cf = data_filter(data)
         # filter data
         processed_data = cf.filter()
         return processed_data
@@ -179,26 +181,60 @@ class Analyzer:
         """
         # process data
         processed_data = self._preprocess_piechart(data, MoralDistributionFilter)
-        self._piechart(processed_data, c_map, save=save)
+        self._series_to_piechart(processed_data, c_map, save=save)
 
-    def make_piecharts(self, data_que: list[DataFrame], c_map: str = 'tab20b', save: bool = True) -> None:
+    def make_piecharts(self, data_que: list[DataFrame], data_filter: Type[DataFilter | FilterSequence],
+                       c_map: str = 'tab20b', save: bool = True) -> None:
         """
         Method to create pie chart
+        :param data_filter: DataFilter or FilterSequence
         :param data_que: list of Dataframes to be processed
-        :param data: list[DataFrame]
         :return: None
         """
         processed_data = None
         # process data
         for data in data_que:
             if processed_data is None:
-                processed_data = self._preprocess_piechart(data, MoralDistributionFilter)
+                processed_data = self._preprocess_piechart(data, data_filter)
             else:
-                processed_data += self._preprocess_piechart(data, MoralDistributionFilter)
+                processed_data += self._preprocess_piechart(data, data_filter)
 
-        self._piechart(processed_data, c_map, save=save)
+        self._series_to_piechart(processed_data, c_map, save=save)
 
-    def _piechart(self, data: Series, c_map, save: bool = True):
+    def plot_phrases(self, data_que: list[DataFrame], data_filter: Type[DataFilter | FilterSequence],
+                     c_map: str = 'tab20b', save: bool = True):
+        processed_data = None
+        # process data
+        for data in data_que:
+            if processed_data is None:
+                processed_data = self._preprocess_piechart(data, data_filter)
+            else:
+                new_data = self._preprocess_piechart(data, data_filter)
+                processed_data = pd.concat([processed_data, new_data], axis=0)
+        result_df = processed_data.groupby('phrase').sum().reset_index()
+
+        as_list = self._dataframe_to_series(result_df)
+        cmap = mpl.colormaps[c_map]
+        for srs in as_list:
+            phrase = srs['phrase']
+            print(f'processing: {phrase}')
+            colors = cmap(np.linspace(0, 1, len(srs)))
+            # init figure
+            labels = srs.index[1:]
+            values = srs.values[1:]  # Exclude the first element, which is the phrase
+            plt.figure()
+            plt.pie(values, labels=labels, autopct='%1.1f%%', startangle=90, colors=colors)
+            plt.title(f'Moral Values Distribution for {phrase}')
+            if save:
+                plt.savefig(f"imgs/phrases/{phrase}.png")
+            else:
+                plt.show()
+
+    def _dataframe_to_series(self, data: DataFrame) -> list[Series]:
+        list_of_series = [pd.Series(row[1]) for row in data.iterrows()]
+        return list_of_series
+
+    def _series_to_piechart(self, data: Series, c_map, save: bool = True):
         # config colors
         cmap = mpl.colormaps[c_map]
         colors = cmap(np.linspace(0, 1, len(data)))

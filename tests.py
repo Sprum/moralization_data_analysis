@@ -24,5 +24,5 @@ CONFIG = {
 if __name__ == "__main__":
     df = pd.read_csv("data/output/DE-Gerichtsurteile-POS_lemmatized.csv")
     sequence = FilterSequence(df, [PhraseCrossOverFilter])
-    res = sequence()
+    res = sequence.filter()
     print(res.iloc[5])
