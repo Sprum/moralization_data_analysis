@@ -23,7 +23,7 @@ CONFIG = {
 
 if __name__ == '__main__':
     path = Path("data/output")
-    files = [file for file in path.iterdir() if file.is_file()]
+    files = [file for file in path.iterdir() if file.is_file() and file.name.startswith("IT")]
     data_stack = []
     data_loader = DataLoader(CONFIG)
     analyzer = Analyzer(data_loader, CONFIG)
