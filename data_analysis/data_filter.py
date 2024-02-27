@@ -12,11 +12,11 @@ class DataFilter(ABC):
     Data Filter Object that takes a DataFrame and returns a filtered Series.
     """
 
-    def __init__(self, data: DataFrame, *args, **kwargs):
+    def __init__(self, data: DataFrame | Series, *args, **kwargs):
         self.data = data
 
     @abstractmethod
-    def filter(self) -> Series | DataFrame:
+    def filter(self, *args, **kwargs) -> Series | DataFrame:
         """
         Method to filter Data based on criteria provided
         :param data:
@@ -49,6 +49,25 @@ class PhraseCrossOverFilter(DataFilter):
         truth_table = (df[moral_columns] != 0).sum(axis=1) > 1
         cf = df[truth_table]
         return cf
+
+
+class ConcatDataFrames(DataFilter):
+
+    def filter(self, df1, df2, **kwargs) -> DataFrame:
+        res_df = pd.concat([df1, df2], **kwargs)
+        return res_df
+
+
+class SumUpSeries(DataFilter):
+
+    def filter(self, series_stack: list[Series], *args, **kwargs) -> Series:
+        res_srs = None
+        for srs in series_stack:
+            if res_srs is None:
+                res_srs = srs
+            else:
+                res_srs += srs
+        return res_srs
 
 
 if __name__ == "__main__":

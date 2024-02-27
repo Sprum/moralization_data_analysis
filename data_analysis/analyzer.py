@@ -226,7 +226,7 @@ class Analyzer:
             plt.pie(values, labels=labels, autopct='%1.1f%%', startangle=90, colors=colors)
             plt.title(f'Moral Values Distribution for {phrase}')
             if save:
-                plt.savefig(f"imgs/phrases/{phrase}.png")
+                plt.savefig(f"imgs/{phrase}.png")
             else:
                 plt.show()
 
