@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import pandas as pd
-from data_analysis import Analyzer, DataLoader
+from data_analysis import Analyzer, FileDataLoader, DataLoader
 # supress pandas warnings
 import warnings
 
@@ -12,6 +12,7 @@ warnings.filterwarnings("ignore")
 # init Configuration
 CONFIG = {
     "file_path": "data/DE-Gerichtsurteile-NEG.xlsx",
+    "data_out_path": "data/output",
     "plot_path": Path("imgs/all_moral_distribution.png"),
     "drop_cols": ["Typ", "Label Obj. Moralwerte", "Label Subj. Moralwerte", "Label Kommunikative Funktionen",
                   "Spans Kommunikative Funktionen", "Label Protagonist:innen", "Spans Protagonist:innen",
@@ -25,7 +26,7 @@ if __name__ == '__main__':
     path = Path("data/output")
     files = [file for file in path.iterdir() if file.is_file() and file.name.startswith("IT")]
     data_stack = []
-    data_loader = DataLoader(CONFIG)
+    data_loader = DataLoader.get_loader(CONFIG)
     analyzer = Analyzer(data_loader, CONFIG)
     print(f"num files: {len(files)}")
     for file in files:

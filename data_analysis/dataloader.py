@@ -1,14 +1,83 @@
+from abc import ABC, abstractstaticmethod, abstractmethod
 from pathlib import Path
+from typing import List
 
 import pandas as pd
-from pandas import DataFrame
+from pandas import DataFrame, Series
 
 MFT_SET = {"Care", "Harm", "Fairness", "Cheating", "Loyalty", "Betrayal", "Authority", "Subversion", "Purity",
            "Degradation", "Liberty",
            "Oppression", "OTHER"}
 
+CONFIG = {
+    "file_path": "../data/",
+    "data_out_path": "../data/output",
+    "plot_path": Path("imgs/all_moral_distribution.png"),
+    "drop_cols": ["Typ", "Label Obj. Moralwerte", "Label Subj. Moralwerte", "Label Kommunikative Funktionen",
+                  "Spans Kommunikative Funktionen", "Label Protagonist:innen", "Spans Protagonist:innen",
+                  "Label Explizite Forderungen", "Spans Explizite Forderung", "Label Implizite Forderungen",
+                  "Spans Implizite Forderung"],
+    "merge_cols": ["Spans Obj. Moralwerte", "Spans Subj. Moralwerte"],
+    "mode": "dir",
+}
+
+
+class DataLoaderInterface(ABC):
+    @abstractmethod
+    def __init__(self, conf: dict) -> None:
+        pass
+
+    @abstractmethod
+    def load(self) -> DataFrame | list[DataFrame]:
+        pass
+
+    @abstractmethod
+    def save(self) -> None:
+        pass
+
+    @abstractmethod
+    def _reformat(self) -> DataFrame:
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def _clean_data(data: DataFrame) -> DataFrame:
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def _validate_split(row: Series) -> Series:
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def _merge_columns(row: Series) -> Series:
+        pass
+
+    @abstractmethod
+    def _read_data(self) -> DataFrame:
+        pass
+
+    @abstractmethod
+    def _is_processed(self) -> bool:
+        pass
+
+    @abstractmethod
+    def __repr__(self):
+        return "DataManager object"
+
 
 class DataLoader:
+    @classmethod
+    def get_loader(cls, config: dict):
+        path = Path(config["file_path"])
+        if path.is_dir():
+            return DirDataLoader(config)
+        else:
+            return FileDataLoader(config)
+
+
+class FileDataLoader(DataLoaderInterface):
     """
     Class to load data and preprocess, eg. remove whitespace and quotation marks. Init with a Config dictionary.
     """
@@ -18,36 +87,27 @@ class DataLoader:
         self.data_path = Path(self.config["file_path"])
         self.raw_data = self._read_data()
         self.data = None
-        self.save_path = "output/" + self.config["file_path"].split(".")[0] + "_processed.csv"
+        self.save_path = self.config["data_out_path"] + "_processed.csv"
 
-    def load(self) -> DataFrame | list[DataFrame]:
+    def load(self) -> DataFrame:
         """
-        Method to load, validate and process data. Can load dirs and files.
+        Method to load, validate and process data. Can load files.
         :return: DataFrame | list[DataFrame]
         """
         path = self.data_path
-        if path.is_dir():
-            print(f"loading data from dir: {path}")
-            data = []
-            for file in path.iterdir():
-                data_temp = pd.read_csv(file)
-                data.append(data_temp)
+
+        print(f"loading data from file: {path}")
+        if self._is_processed():
+            print("Data already processed, continuing.")
+            data = pd.read_csv(path)
             return data
         else:
-            print(f"loading data from file: {path}")
-            if not self._is_processed():
-                print(f"processesing data: {path}")
-                data = self._reformat()
-                data = self._clean_data(data)
-                data['moral_werte'] = data.apply(self._validate_split, axis=1)
-                self.data = data
-                return data
-
-            else:
-                print("Data already processed, continuing.")
-                data = pd.read_csv(path)
-                return data
-
+            print(f"processesing data: {path}")
+            data = self._reformat()
+            data = self._clean_data(data)
+            data['moral_werte'] = data.apply(self._validate_split, axis=1)
+            self.data = data
+            return data
     def save(self) -> None:
         """
         save the processed data
@@ -71,37 +131,20 @@ class DataLoader:
     @staticmethod
     def _clean_data(data: DataFrame) -> DataFrame:
         """
-        method to clean data from unnecessary whitespaces, hashes
+        Method to clean data from unnecessary whitespaces, hashes
         :param data: DataFrame
         :return: DataFrame
         """
-        non_rows = []
-        # iterate over rows
-        for c_idx, content in data['moral_werte'].items():
-            # check if content is none and skip row
-            if not content:
-                non_rows.append(c_idx)
-                continue
-            else:
-                # TODO: aufräumen. ugly.
-                # iterate over list of strings of row
-                for s_idx, string in enumerate(content):
-                    # remove whitespaces at begin and end of str
-                    string = string.strip()
-                    # remove hashes
-                    string = string.replace("#", "")
-                    # remove quotation marks
-                    clean_string = string.replace('"', '')
-                    clean_string = clean_string.replace(u'\u201e', '')
-                    clean_string = clean_string.replace(u'\u201c', '')
-                    # update string in list
-                    content[s_idx] = clean_string
-                # update list in Series
-                data["moral_werte"].iloc[c_idx] = content
-        # drop na rows
-        if non_rows:
-            none_mask = data['moral_werte'].isnull()
-            data = data.drop(data[none_mask].index)
+        # Remove unnecessary whitespaces, hashes, and quotation marks from the 'moral_werte' column
+        data['moral_werte'] = data['moral_werte'].apply(
+            lambda content: [
+                string.strip().replace("#", "").replace('"', '').replace(u'\u201e', '').replace(u'\u201c', '') for
+                string in content] if content else content
+        )
+
+        # Drop rows with empty 'moral_werte'
+        data = data.dropna(subset=['moral_werte'])
+
         return data
 
     @staticmethod
@@ -136,12 +179,12 @@ class DataLoader:
             return s_list
 
     @staticmethod
-    def _merge_columns(row: pd.Series):
+    def _merge_columns(row: Series):
         """
         merges columns and splits on semicolons after evaluating they are eligible as separators and not part of the
         text span.
-        :param row: pd.Series
-        :return: pd.Series
+        :param row: Series
+        :return: Series
         """
         if pd.isna(row['Spans Obj. Moralwerte']) and not pd.isna(row['Spans Subj. Moralwerte']):
             res_row = row['Spans Subj. Moralwerte'].split(";")
@@ -211,4 +254,116 @@ class DataLoader:
         return True
 
     def __repr__(self):
-        return "DataManager object"
+        return "DataManager object for files"
+
+
+class DirDataLoader(DataLoaderInterface):
+    """
+    Class to load data and preprocess, eg. remove whitespace and quotation marks. Init with a Config dictionary.
+    """
+
+    def __init__(self, conf: dict) -> None:
+        self.config = conf
+        self.data_path = Path(self.config["file_path"])
+        self.raw_data = self._read_data()
+        self.data = None
+        self.save_path = self.config["data_out_path"] + "_processed.csv"
+
+    def load(self) -> List[DataFrame]:
+        """
+        Method to load, validate and process data. Can load dirs and files.
+        :return: DataFrame | list[DataFrame]
+        """
+        path = self.data_path
+        print(f"loading data from dir: {path}")
+        data = []
+        for file in path.iterdir():
+            if self._is_processed():
+                data_temp = pd.read_csv(file)
+                data.append(data_temp)
+            else:
+                print(f"processesing data: {file}")
+                data_temp = self._reformat()
+                data_temp = self._clean_data(data_temp)
+                data_temp['moral_werte'] = data_temp.apply(self._validate_split, axis=1)
+                data.append(data_temp)
+        return data
+
+    def save(self) -> None:
+        """
+        save the processed data
+        :return:
+        """
+        for df in self.data:
+            save_path = self.save_path + df.name
+            df.to_csv(save_path, index=False)
+
+    def _reformat(self) -> DataFrame:
+        """
+        helper that drops specified cols and merges the specified ones.
+        :return: pd.DataFrame clean of unnecessary cols
+        """
+        # drop cols
+        data = self.raw_data.drop(self.config["drop_cols"], axis=1)
+        # merge data
+        data['moral_werte'] = data.apply(self._merge_columns, axis=1)
+        return data
+
+    @staticmethod
+    def _validate_split(row: Series) -> Series:
+        pass
+
+    @staticmethod
+    def _clean_data(data: DataFrame) -> DataFrame:
+        """
+        method to clean data from unnecessary whitespaces, hashes
+        :param data: DataFrame
+        :return: DataFrame
+        """
+        pass
+
+    @staticmethod
+    def _merge_columns(row: Series) -> Series:
+        pass
+
+    def _is_processed(self) -> bool:
+        """
+        Helper to check whether or not a df has been processed yet by checking for cols that should be dropped.
+        :return: bool
+        """
+        pass
+
+    # TODO: revisit this method, sepecially the error handling should be handed over to the DataLoader
+    def _read_data(self) -> pd.DataFrame:
+        """
+        Method to read in xlsx files as DataFrame.
+        :return: DataFrame of exel file as is
+        """
+        if not self.data_path.is_dir():
+            try:
+                if self.data_path.suffix != ".xlsx":
+                    raw_data = pd.read_csv(self.data_path)
+                    return raw_data
+                else:
+                    raw_data = pd.read_excel(self.data_path)
+            except FileNotFoundError:
+                self.data_path = Path(input(f"File {self.config['file_path']} not present, please enter a valid path:"))
+                raw_data = self._read_data()
+            return raw_data
+        else:
+            try:
+                sample_file = next(self.data_path.iterdir())
+                raw_data = pd.read_csv(sample_file)
+                return raw_data
+            except FileNotFoundError:
+                self.data_path = Path(input(f"File {self.config['file_path']} not present, please enter a valid path:"))
+                raw_data = self._read_data()
+                return raw_data
+
+    def __repr__(self):
+        return "DataManager object for dirs"
+
+
+if __name__ == "__main__":
+    dl = DataLoader.get_loader(CONFIG)
+    print(dl)

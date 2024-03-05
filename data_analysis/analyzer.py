@@ -10,7 +10,7 @@ from matplotlib import pyplot as plt
 from pandas import Series, DataFrame
 
 from data_analysis.data_filter import DataFilter, MoralDistributionFilter
-from data_analysis.dataloader import DataLoader
+from data_analysis.dataloader import FileDataLoader
 from data_analysis.filter_sequence import FilterSequence
 from data_analysis.plot import Plot
 
@@ -24,7 +24,7 @@ class Analyzer:
     Class to analyze labeled data. Init with DatLoader and config dictionary.
     """
 
-    def __init__(self, dataloader: DataLoader, config: dict, skip_nlp: bool = False):
+    def __init__(self, dataloader: FileDataLoader, config: dict, skip_nlp: bool = False):
         self.plotter = Plot(config)
         self.data = dataloader.load()
         self.config = config
