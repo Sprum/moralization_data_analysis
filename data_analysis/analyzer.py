@@ -1,9 +1,18 @@
 from pathlib import Path
+from typing import Type
 
+import numpy as np
 import pandas as pd
 import spacy
+import matplotlib as mpl
 
+from matplotlib import pyplot as plt
+from pandas import Series, DataFrame
+
+from data_analysis.data_filter import DataFilter, MoralDistributionFilter
 from data_analysis.dataloader import DataLoader
+from data_analysis.filter_sequence import FilterSequence
+from data_analysis.plot import Plot
 
 MFT_SET = {"Care", "Harm", "Fairness", "Cheating", "Loyalty", "Betrayal", "Authority", "Subversion", "Purity",
            "Degradation", "Liberty",
@@ -15,13 +24,15 @@ class Analyzer:
     Class to analyze labeled data. Init with DatLoader and config dictionary.
     """
 
-    def __init__(self, dataloader: DataLoader, config):
+    def __init__(self, dataloader: DataLoader, config: dict, skip_nlp: bool = False):
+        self.plotter = Plot(config)
         self.data = dataloader.load()
         self.config = config
-        self.nlp = self._nlp_factory()
+        if not skip_nlp:
+            self.nlp = self._nlp_factory()
 
     # TODO: add workflow to read in whole dir
-    def occurrences_to_csv(self, mode: str = "file", **kwargs) -> pd.DataFrame:
+    def occurrences_to_csv(self, mode: str = "file", **kwargs) -> DataFrame:
         """
         get, transform and turn data in to csv. either a single file or a whole directory.
         :param mode: str: str | bool  -> specify if you want to create a csv from dir or file
@@ -60,7 +71,7 @@ class Analyzer:
         return list_of_phrases
 
     def _make_csv(self, counted_vals: list, save: bool = False, out_path: str = "data/output/test.csv",
-                  index_col: str | bool = False) -> pd.DataFrame:
+                  index_col: str | bool = False) -> DataFrame:
         """
         Helper method that takes a dict mapping phrases to labeled moral values and creates a Dataframe with the phrases
          and the respective number they were labeled.
@@ -72,7 +83,7 @@ class Analyzer:
         # create and order Dataframe
         order = ['phrase', 'Degradation', 'Care', 'Harm', 'Subversion', 'Fairness', 'Authority', 'Purity', 'Cheating',
                  'OTHER', 'Loyalty', 'Oppression', 'Betrayal', 'Liberty']
-        df = pd.DataFrame(counted_vals)
+        df = DataFrame(counted_vals)
         df.fillna(0)
         df = df[order]
         # optional: set phrases to index
@@ -140,7 +151,7 @@ class Analyzer:
             nlp = spacy.load('it_core_news_lg')
             return nlp
         else:
-            print("unsupported language. Languages supported are: EN, DE, FR, IT")
+            print("unsupported language or file name. Supported language prefixes are: EN, DE, FR, IT")
             return None
 
     def _lemmatize(self, string: str):
@@ -150,3 +161,27 @@ class Analyzer:
             return lemmatized_string
         else:
             raise ValueError("No NLP Model loaded; supported languages: EN, DE, FR, IT")
+
+
+    def make_piechart(self, data: DataFrame, c_map: str = 'tab20b', save: bool = True) -> None:
+        """
+        Method to create pie chart of moral values by language
+        :param data: DataFrame
+        :return: None
+        """
+        # process data
+        self.plotter.make_piechart(data=data, c_map=c_map, save=save)
+
+    def make_piecharts(self, data_que: list[DataFrame], data_filter: Type[DataFilter | FilterSequence],
+                       c_map: str = 'tab20b', save: bool = True) -> None:
+        """
+        Method to create pie chart
+        :param data_filter: DataFilter or FilterSequence
+        :param data_que: list of Dataframes to be processed
+        :return: None
+        """
+        self.plotter.make_piecharts(data_que=data_que, data_filter=data_filter, c_map=c_map, save=save)
+
+    def plot_phrases(self, data_que: list[DataFrame], data_filter: Type[DataFilter | FilterSequence],
+                     c_map: str = 'tab20b', save: bool = True):
+        self.plotter.plot_phrases(data_que=data_que, data_filter=data_filter, c_map=c_map,save=save)

@@ -4,6 +4,10 @@ import pandas as pd
 from data_analysis import Analyzer, DataLoader
 # supress pandas warnings
 import warnings
+
+from data_analysis.data_filter import MoralDistributionFilter, PhraseCrossOverFilter
+from data_analysis.filter_sequence import FilterSequence
+
 warnings.filterwarnings("ignore")
 
 # init Configuration
@@ -17,10 +21,8 @@ CONFIG = {
     "mode": "dir",
 }
 
-if __name__ == '__main__':
-
-    data_loader = DataLoader(CONFIG)
-    analyzer = Analyzer(data_loader, CONFIG)
-    df = analyzer.occurrences_to_csv(index_col="phrase")
-    print(df)
-    # df.to_csv("data/output/testings.csv")
+if __name__ == "__main__":
+    df = pd.read_csv("data/output/DE-Gerichtsurteile-POS_lemmatized.csv")
+    sequence = FilterSequence(df, [PhraseCrossOverFilter])
+    res = sequence.filter()
+    print(res.iloc[5])

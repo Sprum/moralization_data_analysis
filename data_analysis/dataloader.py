@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pandas as pd
 from pandas import DataFrame
 
@@ -8,30 +10,43 @@ MFT_SET = {"Care", "Harm", "Fairness", "Cheating", "Loyalty", "Betrayal", "Autho
 
 class DataLoader:
     """
-    Class to load data and preprocess, eg. remove whitespace and quotationmarks. Init with a Config dictionary.
+    Class to load data and preprocess, eg. remove whitespace and quotation marks. Init with a Config dictionary.
     """
 
     def __init__(self, conf: dict) -> None:
         self.config = conf
+        self.data_path = Path(self.config["file_path"])
         self.raw_data = self._read_data()
         self.data = None
         self.save_path = "output/" + self.config["file_path"].split(".")[0] + "_processed.csv"
 
-    def load(self) -> DataFrame:
+    def load(self) -> DataFrame | list[DataFrame]:
         """
-        Method to load, validate and process data.
-        :return: None
+        Method to load, validate and process data. Can load dirs and files.
+        :return: DataFrame | list[DataFrame]
         """
-        if not self._is_processed():
-            print(f"processesing data: {self.config['file_path']}")
-            data = self._reformat()
-            data = self._clean_data(data)
-            data['moral_werte'] = data.apply(self._validate_split, axis=1)
-            self.data = data
+        path = self.data_path
+        if path.is_dir():
+            print(f"loading data from dir: {path}")
+            data = []
+            for file in path.iterdir():
+                data_temp = pd.read_csv(file)
+                data.append(data_temp)
             return data
-
         else:
-            print("Data already processed, continuing.")
+            print(f"loading data from file: {path}")
+            if not self._is_processed():
+                print(f"processesing data: {path}")
+                data = self._reformat()
+                data = self._clean_data(data)
+                data['moral_werte'] = data.apply(self._validate_split, axis=1)
+                self.data = data
+                return data
+
+            else:
+                print("Data already processed, continuing.")
+                data = pd.read_csv(path)
+                return data
 
     def save(self) -> None:
         """
@@ -68,11 +83,12 @@ class DataLoader:
                 non_rows.append(c_idx)
                 continue
             else:
+                # TODO: aufräumen. ugly.
                 # iterate over list of strings of row
                 for s_idx, string in enumerate(content):
                     # remove whitespaces at begin and end of str
                     string = string.strip()
-                    # remove hashs
+                    # remove hashes
                     string = string.replace("#", "")
                     # remove quotation marks
                     clean_string = string.replace('"', '')
@@ -142,7 +158,7 @@ class DataLoader:
     @staticmethod
     def _check_semicolon(text: str) -> bool:
         """
-        helper method to check whether or not a semicolon is present that should not be sliced at
+        helper method to check whether a semicolon is present that should not be sliced at
         :return: bool
         """
 
@@ -164,12 +180,26 @@ class DataLoader:
         Method to read in xlsx files as DataFrame.
         :return: DataFrame of exel file as is
         """
-        try:
-            raw_data = pd.read_excel(self.config["file_path"])
-        except FileNotFoundError:
-            self.config["file_path"] = input(f"File {self.config['file_path']} not present, please enter a valid path:")
-            raw_data = self._read_data()
-        return raw_data
+        if not self.data_path.is_dir():
+            try:
+                if self.data_path.suffix != ".xlsx":
+                    raw_data = pd.read_csv(self.data_path)
+                    return raw_data
+                else:
+                    raw_data = pd.read_excel(self.data_path)
+            except FileNotFoundError:
+                self.data_path = Path(input(f"File {self.config['file_path']} not present, please enter a valid path:"))
+                raw_data = self._read_data()
+            return raw_data
+        else:
+            try:
+                sample_file = next(self.data_path.iterdir())
+                raw_data = pd.read_csv(sample_file)
+                return raw_data
+            except FileNotFoundError:
+                self.data_path = Path(input(f"File {self.config['file_path']} not present, please enter a valid path:"))
+                raw_data = self._read_data()
+                return raw_data
 
     def _is_processed(self) -> bool:
         """

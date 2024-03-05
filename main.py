@@ -4,11 +4,15 @@ import pandas as pd
 from data_analysis import Analyzer, DataLoader
 # supress pandas warnings
 import warnings
+
+from data_analysis.data_filter import PhraseCrossOverFilter, MoralDistributionFilter
+
 warnings.filterwarnings("ignore")
 
 # init Configuration
 CONFIG = {
     "file_path": "data/DE-Gerichtsurteile-NEG.xlsx",
+    "plot_path": Path("imgs/all_moral_distribution.png"),
     "drop_cols": ["Typ", "Label Obj. Moralwerte", "Label Subj. Moralwerte", "Label Kommunikative Funktionen",
                   "Spans Kommunikative Funktionen", "Label Protagonist:innen", "Spans Protagonist:innen",
                   "Label Explizite Forderungen", "Spans Explizite Forderung", "Label Implizite Forderungen",
@@ -18,20 +22,15 @@ CONFIG = {
 }
 
 if __name__ == '__main__':
-    path = Path("data")
-    files = [file for file in path.iterdir() if file.is_file()]
+    path = Path("data/output")
+    files = [file for file in path.iterdir() if file.is_file() and file.name.startswith("IT")]
+    data_stack = []
+    data_loader = DataLoader(CONFIG)
+    analyzer = Analyzer(data_loader, CONFIG)
+    print(f"num files: {len(files)}")
     for file in files:
-        # solange nur file mode da ist ....
-        CONFIG["file_path"] = str(file)
-        try:
-            data_loader = DataLoader(CONFIG)
-            analyzer = Analyzer(data_loader, CONFIG)
-
-            df = analyzer.occurrences_to_csv(index_col="phrase")
-            # construct out path
-            in_path = Path(CONFIG["file_path"])
-            save_path = in_path.parent / "output" / in_path.name
-            save_path = save_path.with_name(save_path.stem + "_lemmatized.csv")
-            df.to_csv(save_path, encoding="utf-8-sig")
-        except TypeError as e:
-            print(f"{e} | in file: {str(file)}")
+        print(file.name)
+        df = pd.read_csv(file)
+        data_stack.append(df)
+    data_filter = MoralDistributionFilter
+    analyzer.make_piecharts(data_stack, data_filter)
