@@ -31,7 +31,6 @@ class Analyzer:
         if not skip_nlp:
             self.nlp = self._nlp_factory()
 
-    # TODO: add workflow to read in whole dir
     def occurrences_to_csv(self, mode: str = "file", **kwargs) -> DataFrame:
         """
         get, transform and turn data in to csv. either a single file or a whole directory.

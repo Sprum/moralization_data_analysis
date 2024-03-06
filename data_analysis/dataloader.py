@@ -36,7 +36,7 @@ class DataLoaderInterface(ABC):
         pass
 
     @abstractmethod
-    def _reformat(self) -> DataFrame:
+    def _reformat(self, raw_data) -> DataFrame:
         pass
 
     @staticmethod
@@ -58,9 +58,14 @@ class DataLoaderInterface(ABC):
     def _read_data(self) -> DataFrame:
         pass
 
-    @abstractmethod
-    def _is_processed(self) -> bool:
-        pass
+    def _is_processed(self, raw_data) -> bool:
+        """
+        Helper to check whether or not a df has been processed yet by checking for cols that should be dropped.
+        :return: bool
+        """
+        if "Label Obj. Moralwerte" in raw_data:
+            return False
+        return True
 
     @abstractmethod
     def __repr__(self):
@@ -85,7 +90,7 @@ class FileDataLoader(DataLoaderInterface):
     def __init__(self, conf: dict) -> None:
         self.config = conf
         self.data_path = Path(self.config["file_path"])
-        self.raw_data = self._read_data()
+        self.raw_data = None
         self.data = None
         self.save_path = self.config["data_out_path"] + "_processed.csv"
 
@@ -103,11 +108,13 @@ class FileDataLoader(DataLoaderInterface):
             return data
         else:
             print(f"processesing data: {path}")
-            data = self._reformat()
+            raw_data = self._read_data()
+            data = self._reformat(raw_data)
             data = self._clean_data(data)
             data['moral_werte'] = data.apply(self._validate_split, axis=1)
             self.data = data
             return data
+
     def save(self) -> None:
         """
         save the processed data
@@ -115,14 +122,14 @@ class FileDataLoader(DataLoaderInterface):
         """
         self.data.to_csv(self.save_path, index=False)
 
-    def _reformat(self) -> DataFrame:
+    def _reformat(self, raw_data) -> DataFrame:
         """
         helper that drops specified cols and merges the specified ones.
         :return: pd.DataFrame clean of unnecessary cols
 
         """
         # drop cols
-        data = self.raw_data.drop(self.config["drop_cols"], axis=1)
+        data = raw_data.drop(self.config["drop_cols"], axis=1)
         # merge data
         data['moral_werte'] = data.apply(self._merge_columns, axis=1)
 
@@ -223,35 +230,17 @@ class FileDataLoader(DataLoaderInterface):
         Method to read in xlsx files as DataFrame.
         :return: DataFrame of exel file as is
         """
-        if not self.data_path.is_dir():
-            try:
-                if self.data_path.suffix != ".xlsx":
-                    raw_data = pd.read_csv(self.data_path)
-                    return raw_data
-                else:
-                    raw_data = pd.read_excel(self.data_path)
-            except FileNotFoundError:
-                self.data_path = Path(input(f"File {self.config['file_path']} not present, please enter a valid path:"))
-                raw_data = self._read_data()
-            return raw_data
-        else:
-            try:
-                sample_file = next(self.data_path.iterdir())
-                raw_data = pd.read_csv(sample_file)
-                return raw_data
-            except FileNotFoundError:
-                self.data_path = Path(input(f"File {self.config['file_path']} not present, please enter a valid path:"))
-                raw_data = self._read_data()
-                return raw_data
 
-    def _is_processed(self) -> bool:
-        """
-        Helper to check whether or not a df has been processed yet by checking for cols that should be dropped.
-        :return: bool
-        """
-        if "Label Obj. Moralwerte" in self.raw_data:
-            return False
-        return True
+        try:
+            if self.data_path.suffix != ".xlsx":
+                raw_data = pd.read_csv(self.data_path)
+                return raw_data
+            else:
+                raw_data = pd.read_excel(self.data_path)
+        except FileNotFoundError:
+            self.data_path = Path(input(f"File {self.config['file_path']} not present, please enter a valid path:"))
+            raw_data = self._read_data()
+        return raw_data
 
     def __repr__(self):
         return "DataManager object for files"
@@ -265,28 +254,36 @@ class DirDataLoader(DataLoaderInterface):
     def __init__(self, conf: dict) -> None:
         self.config = conf
         self.data_path = Path(self.config["file_path"])
-        self.raw_data = self._read_data()
-        self.data = None
+        self.raw_data = []
+        self.data = []
         self.save_path = self.config["data_out_path"] + "_processed.csv"
 
+    # TODO: refactor so data is read in and THEN checked if processed already
     def load(self) -> List[DataFrame]:
         """
-        Method to load, validate and process data. Can load dirs and files.
-        :return: DataFrame | list[DataFrame]
+        Method to load, validate and process data from dirs.
+        :return: list[DataFrame]
         """
         path = self.data_path
         print(f"loading data from dir: {path}")
         data = []
         for file in path.iterdir():
-            if self._is_processed():
-                data_temp = pd.read_csv(file)
+            data_temp = self._read_data(file)
+
+            if self._is_processed(data_temp):
+                print(f"file already processed: {file}")
                 data.append(data_temp)
             else:
                 print(f"processesing data: {file}")
-                data_temp = self._reformat()
+
+                raw_data = self._read_data(file)
+                self.raw_data = raw_data
+
+                data_temp = self._reformat(raw_data)
                 data_temp = self._clean_data(data_temp)
                 data_temp['moral_werte'] = data_temp.apply(self._validate_split, axis=1)
                 data.append(data_temp)
+                self.data = data
         return data
 
     def save(self) -> None:
@@ -298,13 +295,13 @@ class DirDataLoader(DataLoaderInterface):
             save_path = self.save_path + df.name
             df.to_csv(save_path, index=False)
 
-    def _reformat(self) -> DataFrame:
+    def _reformat(self, raw_data) -> DataFrame:
         """
         helper that drops specified cols and merges the specified ones.
         :return: pd.DataFrame clean of unnecessary cols
         """
         # drop cols
-        data = self.raw_data.drop(self.config["drop_cols"], axis=1)
+        data = raw_data.drop(self.config["drop_cols"], axis=1)
         # merge data
         data['moral_werte'] = data.apply(self._merge_columns, axis=1)
         return data
@@ -326,39 +323,23 @@ class DirDataLoader(DataLoaderInterface):
     def _merge_columns(row: Series) -> Series:
         pass
 
-    def _is_processed(self) -> bool:
-        """
-        Helper to check whether or not a df has been processed yet by checking for cols that should be dropped.
-        :return: bool
-        """
-        pass
-
-    # TODO: revisit this method, sepecially the error handling should be handed over to the DataLoader
-    def _read_data(self) -> pd.DataFrame:
+    def _read_data(self, file: Path) -> pd.DataFrame:
         """
         Method to read in xlsx files as DataFrame.
         :return: DataFrame of exel file as is
         """
-        if not self.data_path.is_dir():
-            try:
-                if self.data_path.suffix != ".xlsx":
-                    raw_data = pd.read_csv(self.data_path)
-                    return raw_data
-                else:
-                    raw_data = pd.read_excel(self.data_path)
-            except FileNotFoundError:
-                self.data_path = Path(input(f"File {self.config['file_path']} not present, please enter a valid path:"))
-                raw_data = self._read_data()
+        try:
+            if file.suffix != ".xlsx":
+                raw_data = pd.read_csv(file)
+                return raw_data
+            else:
+                raw_data = pd.read_excel(file)
             return raw_data
-        else:
-            try:
-                sample_file = next(self.data_path.iterdir())
-                raw_data = pd.read_csv(sample_file)
-                return raw_data
-            except FileNotFoundError:
-                self.data_path = Path(input(f"File {self.config['file_path']} not present, please enter a valid path:"))
-                raw_data = self._read_data()
-                return raw_data
+
+        except FileNotFoundError:
+            self.data_path = Path(input(f"File {self.config['file_path']} not present, please enter a valid path:"))
+            raw_data = self._read_data(file)
+            return raw_data
 
     def __repr__(self):
         return "DataManager object for dirs"
