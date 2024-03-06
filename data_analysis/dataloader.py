@@ -54,6 +54,26 @@ class DataLoaderInterface(ABC):
     def _merge_columns(row: Series) -> Series:
         pass
 
+    @staticmethod
+    def _check_semicolon(text: str) -> bool:
+        """
+        helper method to check whether a semicolon is present that should not be sliced at
+        :return: bool
+        """
+
+        semicolon_count = 0
+        value_count = 0
+        semicolon_count = text.count(";")
+        # no semicolon present -> nothing to slice carefully
+        if semicolon_count == 0:
+            return True
+        # semicolon matches number of moral vals -> safe slicing on semicolons
+        elif semicolon_count == value_count:
+            return True
+        # if semicolon_count != value_count: non separating semicolon as part of text span detected -> treat differently
+        else:
+            return False
+
     @abstractmethod
     def _read_data(self) -> DataFrame:
         pass
@@ -205,25 +225,7 @@ class FileDataLoader(DataLoaderInterface):
             res_row = []
         return res_row
 
-    @staticmethod
-    def _check_semicolon(text: str) -> bool:
-        """
-        helper method to check whether a semicolon is present that should not be sliced at
-        :return: bool
-        """
 
-        semicolon_count = 0
-        value_count = 0
-        semicolon_count = text.count(";")
-        # no semicolon present -> nothing to slice carefully
-        if semicolon_count == 0:
-            return True
-        # semicolon matches number of moral vals -> safe slicing on semicolons
-        elif semicolon_count == value_count:
-            return True
-        # if semicolon_count != value_count: non separating semicolon as part of text span detected -> treat differently
-        else:
-            return False
 
     def _read_data(self) -> pd.DataFrame:
         """
