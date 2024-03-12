@@ -35,7 +35,7 @@ class Analyzer:
     def occurrences_to_csv(self, mode: str = "file", **kwargs) -> DataFrame:
         """
         get, transform and turn data in to csv. either a single file or a whole directory.
-        :param mode: str: str | bool  -> specify if you want to create a csv from dir or file
+        :param mode: str: str -> specify if you want to create a csv from dir or file
         :param kwargs: set phrase to index of df with index_col="phrase"
         :return: DataFrame (or Error :))
         """
@@ -81,8 +81,8 @@ class Analyzer:
         :return: DataFrame
         """
         # create and order Dataframe
-        order = ['phrase', 'Degradation', 'Care', 'Harm', 'Subversion', 'Fairness', 'Authority', 'Purity', 'Cheating',
-                 'OTHER', 'Loyalty', 'Oppression', 'Betrayal', 'Liberty']
+        order = ['phrase', 'Care', 'Harm', 'Authority', 'Subversion', 'Fairness', 'Cheating', 'Purity', 'Degradation',
+                 'Loyalty', 'Betrayal', 'Liberty', 'Oppression', 'OTHER']
         df = DataFrame(counted_vals)
         df.fillna(0)
         df = df[order]
@@ -116,6 +116,7 @@ class Analyzer:
         # init dict
         data_dict = {}
         # iter over list in Series
+        # Todo: refactor to use apply
         for s_list in data:
             # iter over string in list
             for idx, string in enumerate(s_list):
@@ -162,7 +163,6 @@ class Analyzer:
         else:
             raise ValueError("No NLP Model loaded; supported languages: EN, DE, FR, IT")
 
-
     def make_piechart(self, data: DataFrame, c_map: str = 'tab20b', save: bool = True) -> None:
         """
         Method to create pie chart of moral values by language
@@ -184,4 +184,4 @@ class Analyzer:
 
     def plot_phrases(self, data_que: list[DataFrame], data_filter: Type[DataFilter | FilterSequence],
                      c_map: str = 'tab20b', save: bool = True):
-        self.plotter.plot_phrases(data_que=data_que, data_filter=data_filter, c_map=c_map,save=save)
+        self.plotter.plot_phrases(data_que=data_que, data_filter=data_filter, c_map=c_map, save=save)

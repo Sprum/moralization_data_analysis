@@ -333,32 +333,26 @@ class DirDataLoader(DataLoaderInterface):
         """
         pass
 
-    # TODO: revisit this method, sepecially the error handling should be handed over to the DataLoader
+
     def _read_data(self) -> pd.DataFrame:
         """
         Method to read in xlsx files as DataFrame.
         :return: DataFrame of exel file as is
         """
-        if not self.data_path.is_dir():
+        path = Path(self.data_path)
+        files = [file for file in path.iterdir() if file.is_file()]
+        for file in files:
             try:
                 if self.data_path.suffix != ".xlsx":
-                    raw_data = pd.read_csv(self.data_path)
+                    raw_data = pd.read_csv(file)
                     return raw_data
                 else:
-                    raw_data = pd.read_excel(self.data_path)
+                    raw_data = pd.read_excel(file)
             except FileNotFoundError:
                 self.data_path = Path(input(f"File {self.config['file_path']} not present, please enter a valid path:"))
                 raw_data = self._read_data()
             return raw_data
-        else:
-            try:
-                sample_file = next(self.data_path.iterdir())
-                raw_data = pd.read_csv(sample_file)
-                return raw_data
-            except FileNotFoundError:
-                self.data_path = Path(input(f"File {self.config['file_path']} not present, please enter a valid path:"))
-                raw_data = self._read_data()
-                return raw_data
+
 
     def __repr__(self):
         return "DataManager object for dirs"
