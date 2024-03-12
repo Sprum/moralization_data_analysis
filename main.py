@@ -12,7 +12,7 @@ warnings.filterwarnings("ignore")
 # init Configuration
 CONFIG = {
     "file_path": "data/",
-    "data_out_path": "data/out_new",
+    "data_out_path": "data/asdf",
     "plot_path": Path("imgs/all_moral_distribution.png"),
     "drop_cols": ["Typ", "Label Obj. Moralwerte", "Label Subj. Moralwerte", "Label Kommunikative Funktionen",
                   "Spans Kommunikative Funktionen", "Label Protagonist:innen", "Spans Protagonist:innen",
@@ -25,9 +25,13 @@ CONFIG = {
 if __name__ == '__main__':
 
     data_loader = DataLoader.get_loader(CONFIG)
-    data_loader.load()
     analyzer = Analyzer(data_loader, CONFIG)
-    analyzer.occurrences_to_csv(mode="file", index_col="phrase")
+    df_stack = analyzer.occurrences_to_csv(index_col="phrase")
+
+    i = 0
+    for df in df_stack:
+        i += 1
+        df.to_csv(CONFIG["data_out_path"]+f"/{str(i)}.csv")
     # path = Path("data/output")
     # files = [file for file in path.iterdir() if file.is_file() and file.name.startswith("IT")]
     # data_stack = []

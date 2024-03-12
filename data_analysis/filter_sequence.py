@@ -41,19 +41,17 @@ class FilterSequence:
         self.data = data
         self.filter_stack = filter_stack
 
-    def __call__(self, *args, **kwargs):
-        """
-        Executes the filter sequence on the provided DataFrame.
 
-        Returns:
-        - DataFrame: The filtered DataFrame.
+    def filter(self, *args, **kwargs):
+
         """
+         Executes the filter sequence on the provided DataFrame
+         Returns:
+         - DataFrame: The filtered DataFrame.
+         """
         result = self.data
 
         for data_filter in self.filter_stack:
             result = data_filter(result).filter()
 
         return result
-
-    def filter(self):
-        return self()

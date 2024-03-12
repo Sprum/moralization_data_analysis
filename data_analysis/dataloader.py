@@ -95,19 +95,24 @@ class FileDataLoader(DataLoaderInterface):
         :return: DataFrame | list[DataFrame]
         """
         path = self.data_path
+        # for data in something
+        data_stack = []
 
         print(f"loading data from file: {path}")
         if self._is_processed():
             print("Data already processed, continuing.")
             data = pd.read_csv(path)
-            return data
+            self.data = data
+
         else:
             print(f"processesing data: {path}")
-            data = self._reformat()
+            data = self._reformat(self.raw_data)
             data = self._clean_data(data)
             data['moral_werte'] = data.apply(self._validate_split, axis=1)
             self.data = data
-            return data
+
+        return data
+
     def save(self) -> None:
         """
         save the processed data
@@ -115,14 +120,14 @@ class FileDataLoader(DataLoaderInterface):
         """
         self.data.to_csv(self.save_path, index=False)
 
-    def _reformat(self) -> DataFrame:
+    def _reformat(self, raw_data) -> DataFrame:
         """
         helper that drops specified cols and merges the specified ones.
         :return: pd.DataFrame clean of unnecessary cols
 
         """
         # drop cols
-        data = self.raw_data.drop(self.config["drop_cols"], axis=1)
+        data = raw_data.drop(self.config["drop_cols"], axis=1)
         # merge data
         data['moral_werte'] = data.apply(self._merge_columns, axis=1)
 
@@ -223,26 +228,17 @@ class FileDataLoader(DataLoaderInterface):
         Method to read in xlsx files as DataFrame.
         :return: DataFrame of exel file as is
         """
-        if not self.data_path.is_dir():
-            try:
-                if self.data_path.suffix != ".xlsx":
-                    raw_data = pd.read_csv(self.data_path)
-                    return raw_data
-                else:
-                    raw_data = pd.read_excel(self.data_path)
-            except FileNotFoundError:
-                self.data_path = Path(input(f"File {self.config['file_path']} not present, please enter a valid path:"))
-                raw_data = self._read_data()
-            return raw_data
-        else:
-            try:
-                sample_file = next(self.data_path.iterdir())
-                raw_data = pd.read_csv(sample_file)
+
+        try:
+            if self.data_path.suffix != ".xlsx":
+                raw_data = pd.read_csv(self.data_path)
                 return raw_data
-            except FileNotFoundError:
-                self.data_path = Path(input(f"File {self.config['file_path']} not present, please enter a valid path:"))
-                raw_data = self._read_data()
-                return raw_data
+            else:
+                raw_data = pd.read_excel(self.data_path)
+        except FileNotFoundError:
+            self.data_path = Path(input(f"File {self.config['file_path']} not present, please enter a valid path:"))
+            raw_data = self._read_data()
+        return raw_data
 
     def _is_processed(self) -> bool:
         """
@@ -275,15 +271,18 @@ class DirDataLoader(DataLoaderInterface):
         :return: DataFrame | list[DataFrame]
         """
         path = self.data_path
+        files = [file for file in path.iterdir() if file.is_file()]
         print(f"loading data from dir: {path}")
         data = []
-        for file in path.iterdir():
-            if self._is_processed():
+        if self._is_processed():
+            for file in files:
+                print(f"loading data from file: {file}")
                 data_temp = pd.read_csv(file)
                 data.append(data_temp)
-            else:
-                print(f"processesing data: {file}")
-                data_temp = self._reformat()
+        else:
+            for raw_data in self.raw_data:
+                print(f"processesing data...")
+                data_temp = self._reformat(raw_data)
                 data_temp = self._clean_data(data_temp)
                 data_temp['moral_werte'] = data_temp.apply(self._validate_split, axis=1)
                 data.append(data_temp)
@@ -298,20 +297,38 @@ class DirDataLoader(DataLoaderInterface):
             save_path = self.save_path + df.name
             df.to_csv(save_path, index=False)
 
-    def _reformat(self) -> DataFrame:
+    def _reformat(self, raw_data: DataFrame) -> DataFrame:
         """
         helper that drops specified cols and merges the specified ones.
         :return: pd.DataFrame clean of unnecessary cols
         """
         # drop cols
-        data = self.raw_data.drop(self.config["drop_cols"], axis=1)
+        data = raw_data.drop(self.config["drop_cols"], axis=1)
         # merge data
         data['moral_werte'] = data.apply(self._merge_columns, axis=1)
         return data
 
     @staticmethod
     def _validate_split(row: Series) -> Series:
-        pass
+        s_list = row['moral_werte']
+        # Check if the list has more than one item
+        if len(s_list) > 1:
+            new_list = [s_list[0]]  # Initialize with the first item
+
+            # Iterate over the remaining items in the list
+            for idx, string in enumerate(s_list[1:], start=1):
+                # Check if string was split on an unsafe semicolon
+                if not any([string.startswith(moral_val) for moral_val in MFT_SET]):
+                    # Concatenate with the previous item in the new list
+                    new_list[-1] += "; " + string
+                else:
+                    # If safe, add as a separate entry in the new list
+                    new_list.append(string)
+
+            return new_list
+        else:
+            # If the list has only one item, return it unchanged
+            return s_list
 
     @staticmethod
     def _clean_data(data: DataFrame) -> DataFrame:
@@ -320,39 +337,68 @@ class DirDataLoader(DataLoaderInterface):
         :param data: DataFrame
         :return: DataFrame
         """
-        pass
+        # Remove unnecessary whitespaces, hashes, and quotation marks from the 'moral_werte' column
+        data['moral_werte'] = data['moral_werte'].apply(
+            lambda content: [
+                string.strip().replace("#", "").replace('"', '').replace(u'\u201e', '').replace(u'\u201c', '') for
+                string in content] if content else content
+        )
+
+        # Drop rows with empty 'moral_werte'
+        data = data.dropna(subset=['moral_werte'])
+
+        return data
 
     @staticmethod
-    def _merge_columns(row: Series) -> Series:
-        pass
+    def _merge_columns(row: Series):
+        """
+        merges columns and splits on semicolons after evaluating they are eligible as separators and not part of the
+        text span.
+        :param row: Series
+        :return: Series
+        """
+        if pd.isna(row['Spans Obj. Moralwerte']) and not pd.isna(row['Spans Subj. Moralwerte']):
+            res_row = row['Spans Subj. Moralwerte'].split(";")
+
+        elif not pd.isna(row['Spans Obj. Moralwerte']) and pd.isna(row['Spans Subj. Moralwerte']):
+            res_row = row['Spans Obj. Moralwerte'].split(";")
+
+        elif not pd.isna(row['Spans Obj. Moralwerte']) and not pd.isna(row['Spans Subj. Moralwerte']):
+            res_row = row['Spans Obj. Moralwerte'].split(";") + row['Spans Subj. Moralwerte'].split(";")
+        else:
+            res_row = []
+        return res_row
 
     def _is_processed(self) -> bool:
         """
         Helper to check whether or not a df has been processed yet by checking for cols that should be dropped.
         :return: bool
         """
-        pass
 
+        if "Label Obj. Moralwerte" in next(iter(self.raw_data)):
+            return False
+        return True
 
-    def _read_data(self) -> pd.DataFrame:
+    def _read_data(self) -> List[DataFrame]:
         """
         Method to read in xlsx files as DataFrame.
         :return: DataFrame of exel file as is
         """
+        raw_data = []
         path = Path(self.data_path)
         files = [file for file in path.iterdir() if file.is_file()]
         for file in files:
             try:
-                if self.data_path.suffix != ".xlsx":
-                    raw_data = pd.read_csv(file)
-                    return raw_data
+                if file.suffix != ".xlsx":
+                    temp_data = pd.read_csv(file)
+                    raw_data.append(temp_data)
                 else:
-                    raw_data = pd.read_excel(file)
+                    temp_data = pd.read_excel(file)
+                    raw_data.append(temp_data)
             except FileNotFoundError:
                 self.data_path = Path(input(f"File {self.config['file_path']} not present, please enter a valid path:"))
-                raw_data = self._read_data()
-            return raw_data
-
+                self._read_data()
+        return raw_data
 
     def __repr__(self):
         return "DataManager object for dirs"

@@ -28,27 +28,46 @@ class Analyzer:
         self.plotter = Plot(config)
         self.data = dataloader.load()
         self.config = config
+        self.skip_nlp = skip_nlp
+        path = Path(self.config['file_path'])
         if not skip_nlp:
-            self.nlp = self._nlp_factory()
+            if path.is_dir():
+                self.mode = "dir"
+                self.files = iter([file for file in path.iterdir() if file.is_file()])
+            else:
+                self.mode = "file"
+                self.nlp = self._nlp_factory(path.name)
 
     # TODO: add workflow to read in whole dir
-    def occurrences_to_csv(self, mode: str = "file", **kwargs) -> DataFrame:
+    def occurrences_to_csv(self, save: bool = False, **kwargs) -> DataFrame:
         """
         get, transform and turn data in to csv. either a single file or a whole directory.
         :param mode: str: str -> specify if you want to create a csv from dir or file
         :param kwargs: set phrase to index of df with index_col="phrase"
         :return: DataFrame (or Error :))
         """
-        if mode == "file":
-            data_dict = self._map_data('phrase_to_moral')
+        path = Path(self.config['file_path'])
+        if path.is_file():
+            data = self.data
+            data_dict = self._map_data(data, 'phrase_to_moral', nlp=self.nlp)
             counted_vals = self._count_moral_vals(data_dict)
             df = self._make_csv(counted_vals, **kwargs)
+            if save:
+                df.to_csv(path, index=kwargs.get("index_col", False))
             return df
 
-        elif mode == "dir":
-            print("to be implemented")
         else:
-            raise ValueError(f"Unknown mode: {mode}\ntry 'file' or 'dir' instead")
+            data_stack = []
+            for data in self.data:
+                current_file = next(self.files).name
+                nlp = self._nlp_factory(current_file)
+                print("nlping...")
+                data_dict = self._map_data(data, 'phrase_to_moral', nlp, current_file=current_file)
+                print("done!")
+                counted_vals = self._count_moral_vals(data_dict)
+                df = self._make_csv(counted_vals, **kwargs)
+                data_stack.append(df)
+            return data_stack
 
     def _count_moral_vals(self, data_dict: dict) -> list[dict[str:str | str:int]]:
         """
@@ -97,7 +116,7 @@ class Analyzer:
             df.to_csv(out_path, index=index)
         return df
 
-    def _map_data(self, mode: str) -> dict[str: list]:
+    def _map_data(self, data: DataFrame, mode: str, nlp, **kwargs) -> dict[str: list]:
         """
         Helper method to process data DataFrame into a dictionary.
         :param mode: str; options:
@@ -105,7 +124,8 @@ class Analyzer:
         - 'moral_to_phrase': Target format: {moral value: [word/phrase]}
         :return: dict
         """
-        data = self.data["moral_werte"]
+
+        data = data["moral_werte"]
         # index factory or error based on mode
         if mode == "phrase_to_moral":
             key_index, val_index = 1, 0
@@ -128,7 +148,7 @@ class Analyzer:
                 key = sliced_str[key_index].strip()
                 # lemmatize with stopword:
                 if mode == "phrase_to_moral":
-                    key = self._lemmatize(key)
+                    key = self._lemmatize(key, nlp, **kwargs)
                 val = sliced_str[val_index].strip()
                 # append data
                 if key in data_dict:
@@ -137,8 +157,8 @@ class Analyzer:
                     data_dict[key] = [val]
         return data_dict
 
-    def _nlp_factory(self):
-        in_path = Path(self.config['file_path']).name
+    def _nlp_factory(self, path: str):
+        in_path = path
         if in_path.startswith("DE"):
             nlp = spacy.load('de_core_news_lg')
             return nlp
@@ -155,13 +175,11 @@ class Analyzer:
             print("unsupported language or file name. Supported language prefixes are: EN, DE, FR, IT")
             return None
 
-    def _lemmatize(self, string: str):
-        if self.nlp:
-            doc = self.nlp(string)
+    def _lemmatize(self, string: str, nlp, **kwargs):
+        if not self.skip_nlp:
+            doc = nlp(string)
             lemmatized_string = ' '.join([token.lemma_ for token in doc])
             return lemmatized_string
-        else:
-            raise ValueError("No NLP Model loaded; supported languages: EN, DE, FR, IT")
 
     def make_piechart(self, data: DataFrame, c_map: str = 'tab20b', save: bool = True) -> None:
         """
