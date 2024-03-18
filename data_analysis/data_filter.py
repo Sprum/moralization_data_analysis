@@ -1,3 +1,4 @@
+import re
 from abc import abstractmethod, ABC
 
 import numpy as np
@@ -30,7 +31,7 @@ class MoralDistributionFilter(DataFilter):
     :return: Series
     """
 
-    def filter(self) -> Series:
+    def filter(self, *args, **kwargs) -> Series:
         cf = self.data.drop('phrase', axis=1)
         filtered_data = cf.sum()
         return filtered_data
@@ -42,7 +43,7 @@ class PhraseCrossOverFilter(DataFilter):
     :return: Series
     """
 
-    def filter(self) -> DataFrame:
+    def filter(self, *args, **kwargs) -> DataFrame:
         df = self.data
         moral_columns = df.columns[1:]
 
@@ -68,6 +69,31 @@ class SumUpSeries(DataFilter):
             else:
                 res_srs += srs
         return res_srs
+
+
+class RegExFilter(DataFilter):
+    """
+    Filter to filter phrases with a Regex Pattern.
+    Expects: "r_pattern" in kwargs
+    """
+
+    def filter(self, *args, **kwargs) -> list[Series]:
+        r_pattern = kwargs.get("r_pattern")  # Get the regex pattern from kwargs
+
+        if not r_pattern:
+            raise ValueError("Regex pattern (r_pattern) is required.")
+
+        # Apply regex pattern to the entire DataFrame
+        matched_indices = self.data.apply(
+            lambda column: column.str.contains(r_pattern, flags=re.IGNORECASE, regex=True))
+
+        # Filter the DataFrame based on matched indices
+        filtered_df = self.data[matched_indices]
+
+        # Convert filtered DataFrame to list of Series
+        filtered_series_list = [filtered_df[column] for column in filtered_df.columns]
+
+        return filtered_series_list
 
 
 if __name__ == "__main__":
