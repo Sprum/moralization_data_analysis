@@ -1,5 +1,6 @@
 import re
 from abc import abstractmethod, ABC
+from typing import List
 
 import numpy as np
 import pandas as pd
@@ -52,25 +53,6 @@ class PhraseCrossOverFilter(DataFilter):
         return cf
 
 
-class ConcatDataFrames(DataFilter):
-
-    def filter(self, df1, df2, **kwargs) -> DataFrame:
-        res_df = pd.concat([df1, df2], **kwargs)
-        return res_df
-
-
-class SumUpSeries(DataFilter):
-
-    def filter(self, series_stack: list[Series], *args, **kwargs) -> Series:
-        res_srs = None
-        for srs in series_stack:
-            if res_srs is None:
-                res_srs = srs
-            else:
-                res_srs += srs
-        return res_srs
-
-
 class RegExFilter(DataFilter):
     """
     Filter to filter phrases with a Regex Pattern.
@@ -81,19 +63,66 @@ class RegExFilter(DataFilter):
         r_pattern = kwargs.get("r_pattern")  # Get the regex pattern from kwargs
 
         if not r_pattern:
-            raise ValueError("Regex pattern (r_pattern) is required.")
+            raise ValueError("Regex pattern ('r_pattern') is required as kwarg.")
 
-        # Apply regex pattern to the entire DataFrame
-        matched_indices = self.data.apply(
-            lambda column: column.str.contains(r_pattern, flags=re.IGNORECASE, regex=True))
+        # Apply regex pattern to the DataFrame
+        matched_indices = self.data["phrase"].str.contains(r_pattern, flags=re.IGNORECASE, regex=True).astype(bool)
 
         # Filter the DataFrame based on matched indices
         filtered_df = self.data[matched_indices]
 
-        # Convert filtered DataFrame to list of Series
-        filtered_series_list = [filtered_df[column] for column in filtered_df.columns]
+        return filtered_df
 
-        return filtered_series_list
+
+# Util Classes
+
+class ConcatDataFrames(DataFilter):
+    """
+    deprecated :^)
+    """
+    def filter(self, df1, df2, **kwargs) -> DataFrame:
+        res_df = pd.concat([df1, df2], **kwargs)
+        return res_df
+
+
+class ConcatMultipleDataFrames(DataFilter):
+    """
+    Adapter to concatenate a list of DataFrames to one DataFrame
+    """
+    def filter(self, *args, **kwargs) -> DataFrame:
+        if not isinstance(self.data, list) or not all(isinstance(df, pd.DataFrame) for df in self.data):
+            raise ValueError("The 'data' attribute must be a list of DataFrames.")
+
+        if not self.data:
+            raise ValueError("At least one DataFrame must be provided.")
+
+        res_df = pd.concat(self.data)
+        return res_df
+
+
+class SumUpSeries(DataFilter):
+
+    def filter(self, series: List[Series], *args, **kwargs) -> Series:
+        res_srs = None
+        for srs in series:
+            if res_srs is None:
+                res_srs = srs
+            else:
+                res_srs += srs
+        return res_srs
+
+
+class SeriesToDataFrameAdapter(DataFilter):
+    def filter(self, series_list: List[Series], *args, **kwargs) -> DataFrame:
+        return pd.concat(series_list, axis=1)
+
+
+class DataFrameToSeriesList(DataFilter):
+
+    def filter(self,  *args, **kwargs) -> List[Series]:
+        df = self.data
+        series_list = [df[col] for col in df.columns]
+        return series_list
 
 
 if __name__ == "__main__":
