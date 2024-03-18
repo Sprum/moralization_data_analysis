@@ -33,7 +33,9 @@ class MoralDistributionFilter(DataFilter):
     """
 
     def filter(self, *args, **kwargs) -> Series:
+        # drop phrase column
         cf = self.data.drop('phrase', axis=1)
+        # sum up moral val count
         filtered_data = cf.sum()
         return filtered_data
 
@@ -61,26 +63,26 @@ class RegExFilter(DataFilter):
 
     def filter(self, *args, **kwargs) -> list[Series]:
         r_pattern = kwargs.get("r_pattern")  # Get the regex pattern from kwargs
-
+        # check for kwarg present
         if not r_pattern:
             raise ValueError("Regex pattern ('r_pattern') is required as kwarg.")
 
         # Apply regex pattern to the DataFrame
         matched_indices = self.data["phrase"].str.contains(r_pattern, flags=re.IGNORECASE, regex=True).astype(bool)
-
         # Filter the DataFrame based on matched indices
         filtered_df = self.data[matched_indices]
 
         return filtered_df
 
 
-# Util Classes
+# Util Adapter Classes
 
 class ConcatDataFrames(DataFilter):
     """
     deprecated :^)
     """
     def filter(self, df1, df2, **kwargs) -> DataFrame:
+        # concat dfs
         res_df = pd.concat([df1, df2], **kwargs)
         return res_df
 
@@ -90,12 +92,13 @@ class ConcatMultipleDataFrames(DataFilter):
     Adapter to concatenate a list of DataFrames to one DataFrame
     """
     def filter(self, *args, **kwargs) -> DataFrame:
+        # check for types
         if not isinstance(self.data, list) or not all(isinstance(df, pd.DataFrame) for df in self.data):
             raise ValueError("The 'data' attribute must be a list of DataFrames.")
 
         if not self.data:
             raise ValueError("At least one DataFrame must be provided.")
-
+        # concat dfs
         res_df = pd.concat(self.data)
         return res_df
 
@@ -105,6 +108,7 @@ class SumUpSeries(DataFilter):
     def filter(self, *args, **kwargs) -> Series:
         series = self.data
         res_srs = None
+        # loop over series
         for srs in series:
             if res_srs is None:
                 res_srs = srs
@@ -117,6 +121,7 @@ class SeriesToDataFrameAdapter(DataFilter):
     """Adapter to convert a list of Series into a DataFrame."""
     def filter(self, *args, **kwargs) -> DataFrame:
         series_list = self.data
+        # concat series from list
         return pd.concat(series_list, axis=1)
 
 
