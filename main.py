@@ -10,7 +10,7 @@ warnings.filterwarnings("ignore")
 
 # init Configuration
 CONFIG = {
-    "file_path": "data/",
+    "file_path": "data/DE-Gerichtsurteile-NEG.xlsx",
     "data_out_path": "data/asdf",
     "plot_path": Path("imgs/all_moral_distribution.png"),
     "drop_cols": ["Typ", "Label Obj. Moralwerte", "Label Subj. Moralwerte", "Label Kommunikative Funktionen",
@@ -26,11 +26,13 @@ if __name__ == '__main__':
     data_loader = DataLoader.get_loader(CONFIG)
     analyzer = Analyzer(data_loader, CONFIG)
     df_stack = analyzer.occurrences_to_csv(index_col="phrase", aggregate=False)
+    print(df_stack)
+    df_stack.to_csv("test2.csv")
+    # i = 0
+    # for df in df_stack:
+    #     i += 1
+    #     df.to_csv(CONFIG["data_out_path"]+f"/{str(i)}.csv")
 
-    i = 0
-    for df in df_stack:
-        i += 1
-        df.to_csv(CONFIG["data_out_path"]+f"/{str(i)}.csv")
     # path = Path("data/output")
     # files = [file for file in path.iterdir() if file.is_file() and file.name.startswith("DE")]
     # data_stack = []
