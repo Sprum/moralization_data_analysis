@@ -73,7 +73,7 @@ class Plot:
         processed_data = cf.filter()
         return processed_data
 
-    def make_piechart(self, data: DataFrame, c_map: str = 'tab20b', save: bool = True) -> None:
+    def make_pie_chart(self, data: DataFrame, c_map: str = 'tab20b', save: bool = True) -> None:
         """
         Method to create pie chart of moral values by language
         :param data: DataFrame
@@ -83,8 +83,8 @@ class Plot:
         processed_data = self._preprocess_piechart(data, MoralDistributionFilter)
         self._series_to_piechart(processed_data, c_map, save=save)
 
-    def make_piecharts(self, data_que: List[DataFrame], data_filter: Type[DataFilter | FilterSequence],
-                       c_map: str = 'tab20b', save: bool = True) -> None:
+    def make_pie_charts(self, data_que: List[DataFrame], data_filter: Type[DataFilter | FilterSequence],
+                        c_map: str = 'tab20b', save: bool = True) -> None:
         """
         Method to create pie chart
         :param data_filter: DataFilter or FilterSequence
@@ -100,6 +100,9 @@ class Plot:
                 processed_data += self._preprocess_piechart(data, data_filter)
 
         self._series_to_piechart(processed_data, c_map, save=save)
+
+    def make_bar_charts(self):
+        pass
 
     def _dataframe_to_series(self, data: DataFrame) -> List[Series]:
         list_of_series = [pd.Series(row[1]) for row in data.iterrows()]
