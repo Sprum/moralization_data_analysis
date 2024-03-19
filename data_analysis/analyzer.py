@@ -12,7 +12,7 @@ from pandas import Series, DataFrame
 from data_analysis.data_filter import DataFilter, MoralDistributionFilter
 from data_analysis.dataloader import FileDataLoader
 from data_analysis.filter_sequence import FilterSequence
-from data_analysis.plot import Plot
+from data_analysis.plotter import Plotter
 
 MFT_SET = {"Care", "Harm", "Fairness", "Cheating", "Loyalty", "Betrayal", "Authority", "Subversion", "Purity",
            "Degradation", "Liberty",
@@ -25,7 +25,7 @@ class Analyzer:
     """
 
     def __init__(self, dataloader: FileDataLoader, config: dict, skip_nlp: bool = False):
-        self.plotter = Plot(config)
+        self.plotter = Plotter(config)
         self.data = dataloader.load()
         self.config = config
         self.skip_nlp = skip_nlp

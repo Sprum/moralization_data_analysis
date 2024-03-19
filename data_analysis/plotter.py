@@ -11,7 +11,7 @@ from data_analysis.data_filter import DataFilter, MoralDistributionFilter
 from data_analysis.filter_sequence import FilterSequence
 
 
-class Plot:
+class Plotter:
 
     def __init__(self, config):
         self.config = config

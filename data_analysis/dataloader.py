@@ -242,7 +242,8 @@ class FileDataLoader(DataLoaderInterface):
 
     def _is_processed(self) -> bool:
         """
-        Helper to check whether or not a df has been processed yet by checking for cols that should be dropped.
+        Helper to check whether a df has been processed yet by checking for cols that should be dropped. Naiv
+        implementation: check for column labels that shouldn't be present.
         :return: bool
         """
         if "Label Obj. Moralwerte" in self.raw_data:

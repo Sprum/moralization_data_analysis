@@ -1,7 +1,6 @@
 from pathlib import Path
 
-import pandas as pd
-from data_analysis import Analyzer, FileDataLoader, DataLoader
+from data_analysis import Analyzer, DataLoader
 # supress pandas warnings
 import warnings
 
