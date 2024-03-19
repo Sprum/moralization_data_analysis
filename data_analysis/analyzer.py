@@ -188,7 +188,7 @@ class Analyzer:
         :return: None
         """
         # process data
-        self.plotter.make_piechart(data=data, c_map=c_map, save=save)
+        self.plotter.make_pie_chart(data=data, c_map=c_map, save=save)
 
     def make_piecharts(self, data_que: list[DataFrame], data_filter: Type[DataFilter | FilterSequence],
                        c_map: str = 'tab20b', save: bool = True) -> None:
@@ -198,7 +198,7 @@ class Analyzer:
         :param data_que: list of Dataframes to be processed
         :return: None
         """
-        self.plotter.make_piecharts(data_que=data_que, data_filter=data_filter, c_map=c_map, save=save)
+        self.plotter.make_pie_charts(data_que=data_que, data_filter=data_filter, c_map=c_map, save=save)
 
     def plot_phrases(self, data_que: list[DataFrame], data_filter: Type[DataFilter | FilterSequence],
                      c_map: str = 'tab20b', save: bool = True):
