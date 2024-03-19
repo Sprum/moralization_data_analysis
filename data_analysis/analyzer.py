@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Type
+from typing import Type, List
 
 import numpy as np
 import pandas as pd
@@ -38,37 +38,41 @@ class Analyzer:
                 self.mode = "file"
                 self.nlp = self._nlp_factory(path.name)
 
-    # TODO: add workflow to read in whole dir
-    def occurrences_to_csv(self, save: bool = False, **kwargs) -> DataFrame:
+    def occurrences_to_csv(self, save: bool = False, aggregate: bool = False, **kwargs) -> DataFrame | List[DataFrame]:
         """
         get, transform and turn data in to csv. either a single file or a whole directory.
-        :param mode: str: str -> specify if you want to create a csv from dir or file
+        :param aggregate: whether the phrases should be aggregated if more then one
+        :param save: whether to save the csv
         :param kwargs: set phrase to index of df with index_col="phrase"
         :return: DataFrame (or Error :))
         """
         path = Path(self.config['file_path'])
         if path.is_file():
             data = self.data
-            data_dict = self._map_data(data, 'phrase_to_moral', nlp=self.nlp)
+            # eval if phrases should be aggregated
+
+            data_dict = self._map_data(data, 'phrase_to_moral', aggregate=aggregate, nlp=self.nlp)
             counted_vals = self._count_moral_vals(data_dict)
             df = self._make_csv(counted_vals, **kwargs)
             if save:
                 df.to_csv(path, index=kwargs.get("index_col", False))
             return df
-
         else:
             data_stack = []
+            # TODO: hier weiter machen
             for data in self.data:
                 current_file = next(self.files).name
                 nlp = self._nlp_factory(current_file)
-                print("nlping...")
-                data_dict = self._map_data(data, 'phrase_to_moral', nlp, current_file=current_file)
+                # eval if phrases should be aggregated
+                print(f"nlping {current_file}")
+                data_dict = self._map_data(data, 'phrase_to_moral', nlp, aggregate=aggregate, current_file=current_file)
                 print("done!")
                 counted_vals = self._count_moral_vals(data_dict)
                 df = self._make_csv(counted_vals, **kwargs)
                 data_stack.append(df)
             return data_stack
 
+    # TODO: entwirren, hier sollte nicht per default phrases aggregiert werden
     def _count_moral_vals(self, data_dict: dict) -> list[dict[str:str | str:int]]:
         """
         Helper method to count moral values for each phrase
@@ -116,7 +120,7 @@ class Analyzer:
             df.to_csv(out_path, index=index)
         return df
 
-    def _map_data(self, data: DataFrame, mode: str, nlp, **kwargs) -> dict[str: list]:
+    def _map_data(self, data: DataFrame, mode: str, nlp, aggregate: bool, **kwargs) -> dict[str: list]:
         """
         Helper method to process data DataFrame into a dictionary.
         :param mode: str; options:
@@ -135,6 +139,7 @@ class Analyzer:
             raise ValueError(f"Unknown mode: '{mode}'. consider using either 'phrase_to_moral' or 'moral_to_phrase'")
         # init dict
         data_dict = {}
+        data_list = []
         # iter over list in Series
         # Todo: refactor to use apply
         for s_list in data:
@@ -142,7 +147,7 @@ class Analyzer:
             for idx, string in enumerate(s_list):
                 # check if string was split on unsafe semicolon:
                 if not any([string.startswith(moral_val) for moral_val in MFT_SET]):
-                    print(s_list[idx - 1], string)
+                    print("warning - propably split on wrong semicolon:\n" + s_list[idx - 1], string)
                 # slice string for key and val (based on mode)
                 sliced_str = string.split(":", maxsplit=1)
                 key = sliced_str[key_index].strip()
@@ -150,12 +155,20 @@ class Analyzer:
                 if mode == "phrase_to_moral":
                     key = self._lemmatize(key, nlp, **kwargs)
                 val = sliced_str[val_index].strip()
-                # append data
-                if key in data_dict:
-                    data_dict[key].append(val)
+                if aggregate:
+                    # append data
+                    if key in data_dict:
+                        data_dict[key].append(val)
+                    else:
+                        data_dict[key] = [val]
                 else:
-                    data_dict[key] = [val]
-        return data_dict
+                    data_list.append({key: val})
+        if data_dict:
+            print(data_dict)
+            return data_dict
+        else:
+            print(data_list)
+            return data_list
 
     def _nlp_factory(self, path: str):
         in_path = path

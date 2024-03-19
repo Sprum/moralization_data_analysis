@@ -25,7 +25,7 @@ if __name__ == '__main__':
 
     data_loader = DataLoader.get_loader(CONFIG)
     analyzer = Analyzer(data_loader, CONFIG)
-    df_stack = analyzer.occurrences_to_csv(index_col="phrase")
+    df_stack = analyzer.occurrences_to_csv(index_col="phrase", aggregate=False)
 
     i = 0
     for df in df_stack:
