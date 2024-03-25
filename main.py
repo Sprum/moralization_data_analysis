@@ -10,8 +10,8 @@ warnings.filterwarnings("ignore")
 
 # init Configuration
 CONFIG = {
-    "file_path": "data/DE-Gerichtsurteile-NEG.xlsx",
-    "data_out_path": "data/asdf",
+    "file_path": "data/input/",
+    "data_out_path": "data/input/merged",
     "plot_path": Path("imgs/all_moral_distribution.png"),
     "drop_cols": ["Typ", "Label Obj. Moralwerte", "Label Subj. Moralwerte", "Label Kommunikative Funktionen",
                   "Spans Kommunikative Funktionen", "Label Protagonist:innen", "Spans Protagonist:innen",
@@ -23,11 +23,15 @@ CONFIG = {
 
 if __name__ == '__main__':
 
+    file_names = [file.name.split(".")[0] + "_lemmatized.csv" for file in Path("data/input/").iterdir() if file.is_file()]
+
     data_loader = DataLoader.get_loader(CONFIG)
     analyzer = Analyzer(data_loader, CONFIG)
     df_stack = analyzer.occurrences_to_csv(index_col="phrase", aggregate=False)
-    print(df_stack)
-    df_stack.to_csv("test2.csv")
+    for i, df in enumerate(df_stack):
+        path = "data/output/per_instance/" + file_names[i]
+        df.to_csv(path)
+
     # i = 0
     # for df in df_stack:
     #     i += 1

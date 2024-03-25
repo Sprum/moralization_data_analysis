@@ -101,8 +101,17 @@ class Plotter:
 
         self._series_to_piechart(processed_data, c_map, save=save)
 
-    def make_bar_charts(self):
-        pass
+    def make_bar_chart(self, data: DataFrame, save: bool = False):
+        # Plot the DataFrame
+        ax = data.plot(kind='bar', x='Category', y='Value', legend=None)
+
+        # Customize the plot
+        ax.set_xlabel('Categories')
+        ax.set_ylabel('Values')
+        ax.set_title('Bar Chart from DataFrame')
+
+        # Return the plot
+        return ax
 
     def _dataframe_to_series(self, data: DataFrame) -> List[Series]:
         list_of_series = [pd.Series(row[1]) for row in data.iterrows()]

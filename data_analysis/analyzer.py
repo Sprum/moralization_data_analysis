@@ -75,9 +75,8 @@ class Analyzer:
                     print("done!")
                     counted_vals = self._count_aggr_moral_vals(data_dict)
                 else:
-                    print("aggre False")
                     data_dict = self._map_data(data, 'phrase_to_moral', nlp, current_file=current_file)
-                    print(type(data_dict, "\n", data_dict))
+
                     counted_vals = self._count_moral_vals(data_dict)
                 df = self._make_csv(counted_vals, **kwargs)
                 data_stack.append(df)
