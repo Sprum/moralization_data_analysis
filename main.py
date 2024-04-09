@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from matplotlib import pyplot as plt
+
 from data_analysis import Analyzer, DataLoader
 # supress pandas warnings
 import warnings
@@ -26,4 +28,5 @@ if __name__ == '__main__':
     data_loader = DataLoader.get_loader(CONFIG)
     analyzer = Analyzer(data_loader, CONFIG)
 
-    analyzer.plot_phrases(analyzer.data, PhraseCrossOverFilter)
+    ax = analyzer.plotter.make_bar_chart(analyzer.data, ConcatMultipleDataFrames)
+    plt.show()

@@ -48,7 +48,6 @@ class Plotter:
             phrase = srs['phrase']
             print(f'processing: {phrase}')
             # init figure
-            # Todo:  absolute Zahl zu Label
             non_zero_indices = srs.values[1:] != 0
             labels = srs.index[1:][non_zero_indices]
             values = srs.values[1:][non_zero_indices]  # Exclude the first element, which is the phrase
@@ -101,9 +100,11 @@ class Plotter:
 
         self._series_to_piechart(processed_data, c_map, save=save)
 
-    def make_bar_chart(self, data: DataFrame, save: bool = False):
+    def make_bar_chart(self, data: DataFrame, data_filter: Type[DataFilter | FilterSequence], save: bool = True):
+        f = data_filter(data)
+        processed_data = f.filter()
         # Plot the DataFrame
-        ax = data.plot(kind='bar', x='Category', y='Value', legend=None)
+        ax = processed_data.plot(kind='bar', x='Category', y='Value', legend=None)
 
         # Customize the plot
         ax.set_xlabel('Categories')
@@ -116,3 +117,9 @@ class Plotter:
     def _dataframe_to_series(self, data: DataFrame) -> List[Series]:
         list_of_series = [pd.Series(row[1]) for row in data.iterrows()]
         return list_of_series
+
+    def test(self):
+        pass
+
+if __name__ == "__main__":
+    pass
