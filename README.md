@@ -27,7 +27,7 @@ CONFIG = {
 ```
 * `.occurrences_to_csv()`: use this to process the raw xlsx to csvs. Returns the preprocessed DataFrames. If `aggregate` is set to `False` (default), spans that occure multiple times won't be merged, so you can analyze every instance of that span.
 * `.make_piecharts()`: makes a pie-chart of the moral value distribution accross the list of DataFrames passed to `data_que`. Change the style by passing a [color map](https://matplotlib.org/stable/gallery/color/colormap_reference.html) string to `c_map` (Default: `"tab20b"`). Expects a [DataFilter or DataFilterSequence](#4-datafilter) passed to `data_filter`.
-* `.plot_phrases()`: makes a pie-chart showing the percentage of annotated moral values to each phrase. Same options as in `make_piecharts()`
+* `.plot_phrases()`: makes a pie-chart showing the percentage of annotated moral values to each phrase in the given DataFrame. Same options as in `make_piecharts()`
 ### 2. DataLoader
 Requires a Config Dictionary (like [Analyzer](#1-analyzer)). Best instantiated by calling the `get_loader()` method since it will choose between `FileDataLoader` and `DirDataLoader`:
 ```Python
@@ -35,7 +35,7 @@ data_loader = DataLoader.get_loader(CONFIG)
 ```
 
 ### 3. Plotter
-Will be instantiated on initializing the [Analyzer](#1-analyzer) class.
+Will be instantiated on initializing the [Analyzer](#1-analyzer) class. Control what should be plotted by using [DataFilters](#4-datafilter) or a [FilterSequence](#5-filtersequence)
 
 ### 4. DataFilter
 Parent to multiple DataFilter classes to filter and transform Data und specific criteria. Has some utility classes.

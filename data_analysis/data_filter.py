@@ -132,6 +132,12 @@ class DataFrameToSeriesList(DataFilter):
         series_list = [df[col] for col in df.columns]
         return series_list
 
+class Void(DataFilter):
+    """
+    class to do nothing with the data :^)
+    """
+    def filter(self, *args, **kwargs) -> Series | DataFrame:
+        return self.data
 
 if __name__ == "__main__":
     df = pd.read_csv("../data/output/DE-Interviews-NEG_lemmatized.csv")

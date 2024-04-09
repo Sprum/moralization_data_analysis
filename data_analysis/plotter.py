@@ -44,17 +44,17 @@ class Plotter:
         result_df = processed_data.groupby('phrase').sum().reset_index()
 
         as_list = self._dataframe_to_series(result_df)
-        cmap = mpl.colormaps[c_map]
         for srs in as_list:
             phrase = srs['phrase']
             print(f'processing: {phrase}')
-            colors = cmap(np.linspace(0, 1, len(srs)))
             # init figure
-            labels = srs.index[1:]
-            values = srs.values[1:]  # Exclude the first element, which is the phrase
+            # Todo:  absolute Zahl zu Label
+            non_zero_indices = srs.values[1:] != 0
+            labels = srs.index[1:][non_zero_indices]
+            values = srs.values[1:][non_zero_indices]  # Exclude the first element, which is the phrase
             plt.figure()
-            plt.pie(values, labels=labels, autopct='%1.1f%%', startangle=90, colors=colors)
-            plt.title(f'Moral Values Distribution for {phrase}')
+            plt.pie(values, labels=labels, autopct=lambda p: f'{p:.2f}%\n({int(p * sum(values) / 100)})', startangle=90)
+            plt.title(f'Moral Values Distribution for: "{phrase}"\nannotated values in total: {values.sum()}')
             if save:
                 plt.savefig(f"imgs/{phrase}.png")
             else:

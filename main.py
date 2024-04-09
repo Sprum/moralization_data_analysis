@@ -4,15 +4,16 @@ from data_analysis import Analyzer, DataLoader
 # supress pandas warnings
 import warnings
 
-from data_analysis.data_filter import PhraseCrossOverFilter, MoralDistributionFilter
+from data_analysis.data_filter import PhraseCrossOverFilter, MoralDistributionFilter, ConcatMultipleDataFrames, Void
+from data_analysis.filter_sequence import FilterSequence
 
 warnings.filterwarnings("ignore")
 
 # init Configuration
 CONFIG = {
     "file_path": "data/output/",
-    "data_out_path": "data/imgs",
-    "plot_path": Path("imgs/all_moral_distribution.png"),
+    "data_out_path": "data/imgs/phrases",
+    "plot_path": Path("imgs/testings.png"),
     "drop_cols": ["Typ", "Label Obj. Moralwerte", "Label Subj. Moralwerte", "Label Kommunikative Funktionen",
                   "Spans Kommunikative Funktionen", "Label Protagonist:innen", "Spans Protagonist:innen",
                   "Label Explizite Forderungen", "Spans Explizite Forderung", "Label Implizite Forderungen",
@@ -24,5 +25,5 @@ if __name__ == '__main__':
 
     data_loader = DataLoader.get_loader(CONFIG)
     analyzer = Analyzer(data_loader, CONFIG)
-    print(analyzer.data)
 
+    analyzer.plot_phrases(analyzer.data, PhraseCrossOverFilter)
