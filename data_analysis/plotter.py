@@ -100,7 +100,7 @@ class Plotter:
 
         self._series_to_piechart(processed_data, c_map, save=save)
 
-    def make_bar_chart(self, data: DataFrame, data_filter: Type[DataFilter | FilterSequence], save: bool = True):
+    def make_bar_chart(self, data: DataFrame | List[DataFrame], data_filter: Type[DataFilter | FilterSequence], save: bool = True):
         f = data_filter(data)
         processed_data = f.filter()
         # Plot the DataFrame

@@ -283,3 +283,27 @@ class Analyzer:
     def plot_phrases(self, data_que: list[DataFrame], data_filter: Type[DataFilter | FilterSequence],
                      c_map: str = 'tab20b', save: bool = True):
         self.plotter.plot_phrases(data_que=data_que, data_filter=data_filter, c_map=c_map, save=save)
+
+    # Todo: Filter rein, fertig machen
+    def make_bar_chart(self, data_dict: dict, data_filter: Type[DataFilter | FilterSequence]):
+        # prepare data normalization
+        prepared_data = {}
+        lens = []
+        total_data_len = 0
+        for category in data_dict:
+            category_len = 0
+            category_data = []
+            for path in data_dict[category]:
+                data = pd.read_csv(path)
+                data_len = len(data)
+                category_len += data_len
+                category_data.append(data)
+            total_data_len += category_len
+            prepared_data[category] = (category_len, category_data)
+        print(prepared_data)
+        print(total_data_len)
+        for prep_cat in prepared_data:
+            prepared_data[prep_cat] = (prepared_data[prep_cat][0], (prepared_data[prep_cat][0]/total_data_len), prepared_data[1])
+
+        print(prepared_data)
+        #self.plotter.make_bar_chart(data=data_que, data_filter=data_filter, )
