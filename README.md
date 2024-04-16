@@ -30,7 +30,7 @@ CONFIG = {
 * `.plot_phrases()`: makes a pie-chart showing the percentage of annotated moral values to each phrase in the given DataFrame. Same options as in `make_piecharts()`
 * `.make_bar_chart()`: makes a bar chart plotting annotated moral values by dynamic categories (as passed in `data_dict`).
     The data is normalized in comparison to the whole data by default, this can be toggled of by passing `normalize=False`.
-    If a valid path is passed to `save_path`, the plot will be saved to that path, otherwise the figure will only be shown.
+    If a valid path is passed to `save_path`, the plot will be saved to that path, otherwise the figure will only be shown. If `inverted` is set to `True`, the plot will have the moral values on the x-axis and the bars representing the categories. The kwarg `divide_by_anno` can be set to `False` in order to normalize the data by dividing through the len of the num of paragraphs in one category. By Default it is set to `True`, meaning normalization is achieved by dividing through the total sum of annotated values within a category.
 ### 2. DataLoader
 Requires a Config Dictionary (like [Analyzer](#1-analyzer)). Best instantiated by calling the `get_loader()` method since it will choose between `FileDataLoader` and `DirDataLoader`:
 ```Python

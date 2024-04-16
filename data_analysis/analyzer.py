@@ -285,7 +285,7 @@ class Analyzer:
         self.plotter.plot_phrases(data_que=data_que, data_filter=data_filter, c_map=c_map, save=save)
 
     def make_bar_chart(self, data_dict: dict, save_path: str = None,
-                       normalize: bool = True):  # , data_filter: Type[DataFilter | FilterSequence]
+                       normalize: bool = True, inverted:bool=False, divide_by_anno: bool=True):  # , data_filter: Type[DataFilter | FilterSequence]
         # prepare data normalization
         prepared_data = {}
         lens = []
@@ -302,12 +302,13 @@ class Analyzer:
             prepared_data[category] = (category_len, category_data)
 
         for prep_cat in prepared_data:
-            prep_len = prepared_data[prep_cat][0]
+            prep_len = prepared_data[prep_cat][0]   # cat_len
             prep_data = pd.concat(prepared_data[prep_cat][1])
             f = MoralDistributionFilter(prep_data)
             prep_data = f.filter()
             prep_norm = prep_len / total_data_len
             prepared_data[prep_cat] = (prep_len, prep_norm, prep_data)
-
-        print(prepared_data)
-        self.plotter.make_bar_chart(data_dict=prepared_data, save_path=save_path, normalize=normalize)
+        if inverted:
+            self.plotter.make_inverted_bar_chart(data_dict=prepared_data, save_path=save_path, normalize=normalize)
+        else:
+            self.plotter.make_bar_chart(data_dict=prepared_data, save_path=save_path, normalize=normalize)

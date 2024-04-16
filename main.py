@@ -42,4 +42,4 @@ data_dict = {
 if __name__ == '__main__':
     data_loader = DataLoader.get_loader(CONFIG)
     analyzer = Analyzer(data_loader, CONFIG)
-    analyzer.make_bar_chart(data_dict, "imgs/bar_plot_test_len2.png")
+    analyzer.make_bar_chart(data_dict, "imgs/label_test.png", normalize=True, inverted=False)
