@@ -1,46 +1,45 @@
 from pathlib import Path
 
-import pandas as pd
-from data_analysis import Analyzer, FileDataLoader, DataLoader
+from matplotlib import pyplot as plt
+
+from data_analysis import Analyzer, DataLoader
 # supress pandas warnings
 import warnings
 
-from data_analysis.data_filter import PhraseCrossOverFilter, MoralDistributionFilter
+from data_analysis.data_filter import PhraseCrossOverFilter, MoralDistributionFilter, ConcatMultipleDataFrames, Void
+from data_analysis.filter_sequence import FilterSequence
 
 warnings.filterwarnings("ignore")
 
 # init Configuration
 CONFIG = {
-    "file_path": "data/",
-    "data_out_path": "data/asdf",
-    "plot_path": Path("imgs/all_moral_distribution.png"),
+    "file_path": "data/output",
+    "data_out_path": "data/imgs/phrases",
+    "plot_path": Path("imgs/testings.png"),
     "drop_cols": ["Typ", "Label Obj. Moralwerte", "Label Subj. Moralwerte", "Label Kommunikative Funktionen",
                   "Spans Kommunikative Funktionen", "Label Protagonist:innen", "Spans Protagonist:innen",
                   "Label Explizite Forderungen", "Spans Explizite Forderung", "Label Implizite Forderungen",
                   "Spans Implizite Forderung"],
     "merge_cols": ["Spans Obj. Moralwerte", "Spans Subj. Moralwerte"],
-    "mode": "dir",
+}
+
+data_dict = {
+    "Gerichtsurteile": ["data\output\DE-Gerichtsurteile-NEG_lemmatized.csv",
+                        "data\output\DE-Gerichtsurteile-POS_lemmatized.csv"],
+    "Interviews": ["data\output\DE-Interviews-NEG_lemmatized.csv",
+                   "data\output\DE-Interviews-POS_lemmatized.csv"],
+    "Kommentare": ["data\output\DE-Kommentare-NEG_lemmatized.csv",
+                   "data\output\DE-Kommentare-POS_lemmatized.csv"],
+    "Leserbriefe": ["data/output/DE-Leserbriefe-NEG_lemmatized.csv",
+                    "data/output/DE-Leserbriefe-POS_lemmatized.csv"],
+    "Plenarprotokolle": ["data/output/DE-Plenarprotokolle-NEG_lemmatized.csv",
+                         "data/output/DE-Plenarprotokolle-POS_lemmatized.csv"],
+    "Sachbuecher": ["data/output/DE-Sachbuecher-POS_lemmatized.csv"],
+    "Wikipediadiskussionen": ["data/output/DE_Wikipediadiskussionen_neg_compact_lemmatized.csv",
+                              "data/output/DE_Wikipediadiskussionen_pos_compact_lemmatized.csv"]
 }
 
 if __name__ == '__main__':
-
     data_loader = DataLoader.get_loader(CONFIG)
     analyzer = Analyzer(data_loader, CONFIG)
-    df_stack = analyzer.occurrences_to_csv(index_col="phrase")
-
-    i = 0
-    for df in df_stack:
-        i += 1
-        df.to_csv(CONFIG["data_out_path"]+f"/{str(i)}.csv")
-    # path = Path("data/output")
-    # files = [file for file in path.iterdir() if file.is_file() and file.name.startswith("DE")]
-    # data_stack = []
-    # data_loader = DataLoader.get_loader(CONFIG)
-    # analyzer = Analyzer(data_loader, CONFIG)
-    # print(f"num files: {len(files)}")
-    # for file in files:
-    #     print(file.name)
-    #     df = pd.read_csv(file)
-    #     data_stack.append(df)
-    # data_filter = MoralDistributionFilter
-    # analyzer.plot_phrases(data_stack, data_filter)
+    analyzer.make_bar_chart(data_dict, "imgs/label_test.png", normalize=True, inverted=False)
