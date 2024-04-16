@@ -100,26 +100,40 @@ class Plotter:
 
         self._series_to_piechart(processed_data, c_map, save=save)
 
-    def make_bar_chart(self, data: DataFrame | List[DataFrame], data_filter: Type[DataFilter | FilterSequence], save: bool = True):
-        f = data_filter(data)
-        processed_data = f.filter()
-        # Plot the DataFrame
-        ax = processed_data.plot(kind='bar', x='Category', y='Value', legend=None)
+    def make_bar_chart(self, data_dict: dict, save_path: str, normalize: bool = True):
+        categories = list(data_dict.keys())
+        moral_values = data_dict[categories[0]][2].index.tolist()  # Assuming all categories have the same moral values
+        num_categories = len(categories)
+        bar_width = 0.1
+        index = np.arange(len(moral_values))
 
-        # Customize the plot
-        ax.set_xlabel('Categories')
-        ax.set_ylabel('Values')
-        ax.set_title('Bar Chart from DataFrame')
+        plt.figure(figsize=(16, 8))  # Increased figure size
+        if normalize:
+            for i, category in enumerate(categories):
+                normalization_factor = data_dict[category][1]
+                values = data_dict[category][2] * normalization_factor
+                plt.bar(index + i * bar_width, values, bar_width,
+                        label=f"{category}: {round(normalization_factor * 100, 2)}%")
+        else:
+            for i, category in enumerate(categories):
+                values = data_dict[category][2]
+                plt.bar(index + i * bar_width, values, bar_width, label=f"{category}: {data_dict[category][0]}")
 
-        # Return the plot
-        return ax
+        plt.xlabel('Moral Values')
+        plt.ylabel('Count')
+        plt.title(f'Moral Values Distribution by Category (normalized: {normalize})')
+        plt.xticks(index + bar_width * (num_categories - 1) / 2, moral_values)
+        plt.legend()
+        plt.tight_layout()
+        if save_path:
+            plt.savefig(save_path)
+        else:
+            plt.show()
 
     def _dataframe_to_series(self, data: DataFrame) -> List[Series]:
         list_of_series = [pd.Series(row[1]) for row in data.iterrows()]
         return list_of_series
 
-    def test(self):
-        pass
 
 if __name__ == "__main__":
     pass

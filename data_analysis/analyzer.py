@@ -284,8 +284,8 @@ class Analyzer:
                      c_map: str = 'tab20b', save: bool = True):
         self.plotter.plot_phrases(data_que=data_que, data_filter=data_filter, c_map=c_map, save=save)
 
-    # Todo: Filter rein, fertig machen
-    def make_bar_chart(self, data_dict: dict, data_filter: Type[DataFilter | FilterSequence]):
+    def make_bar_chart(self, data_dict: dict, save_path: str = None,
+                       normalize: bool = True):  # , data_filter: Type[DataFilter | FilterSequence]
         # prepare data normalization
         prepared_data = {}
         lens = []
@@ -300,10 +300,14 @@ class Analyzer:
                 category_data.append(data)
             total_data_len += category_len
             prepared_data[category] = (category_len, category_data)
-        print(prepared_data)
-        print(total_data_len)
+
         for prep_cat in prepared_data:
-            prepared_data[prep_cat] = (prepared_data[prep_cat][0], (prepared_data[prep_cat][0]/total_data_len), prepared_data[1])
+            prep_len = prepared_data[prep_cat][0]
+            prep_data = pd.concat(prepared_data[prep_cat][1])
+            f = MoralDistributionFilter(prep_data)
+            prep_data = f.filter()
+            prep_norm = prep_len / total_data_len
+            prepared_data[prep_cat] = (prep_len, prep_norm, prep_data)
 
         print(prepared_data)
-        #self.plotter.make_bar_chart(data=data_que, data_filter=data_filter, )
+        self.plotter.make_bar_chart(data_dict=prepared_data, save_path=save_path, normalize=normalize)
