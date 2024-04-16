@@ -110,10 +110,11 @@ class Plotter:
         plt.figure(figsize=(16, 8))  # Increased figure size
         if normalize:
             for i, category in enumerate(categories):
+                len_cat = data_dict[category][0]
                 normalization_factor = data_dict[category][1]
-                values = data_dict[category][2] * normalization_factor
+                values = data_dict[category][2] / len_cat
                 plt.bar(index + i * bar_width, values, bar_width,
-                        label=f"{category}: {round(normalization_factor * 100, 2)}%")
+                        label=f"{category}: {data_dict[category][0]}")
         else:
             for i, category in enumerate(categories):
                 values = data_dict[category][2]
